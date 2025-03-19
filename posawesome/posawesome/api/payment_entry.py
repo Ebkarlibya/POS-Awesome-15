@@ -1,9 +1,7 @@
 # Copyright (c) 2021, Youssef Restom and contributors
 # For license information, please see license.txt
 
-import frappe
-import erpnext
-import json
+import frappe, erpnext, json
 from frappe import _
 from frappe.utils import nowdate, getdate, flt
 from erpnext.accounts.party import get_party_account
@@ -44,8 +42,7 @@ def create_payment_entry(
 
     bank = get_bank_cash_account(company, mode_of_payment)
     company_currency = frappe.get_value("Company", company, "default_currency")
-    conversion_rate = get_exchange_rate(
-        currency, company_currency, date, "for_selling")
+    conversion_rate = get_exchange_rate(currency, company_currency, date, "for_selling")
     paid_amount, received_amount = set_paid_amount_and_received_amount(
         party_account_currency, bank, amount, payment_type, None, conversion_rate
     )
@@ -69,8 +66,7 @@ def create_payment_entry(
     )
     pe.paid_amount = paid_amount
     pe.received_amount = received_amount
-    pe.letter_head = frappe.get_value(
-        "Company", company, "default_letter_head")
+    pe.letter_head = frappe.get_value("Company", company, "default_letter_head")
     pe.reference_date = reference_date
     pe.reference_no = reference_no
     if pe.party_type in ["Customer", "Supplier"]:
@@ -134,17 +130,14 @@ def set_paid_amount_and_received_amount(
 @frappe.whitelist()
 def get_outstanding_invoices(company, currency, customer=None, pos_profile_name=None):
     if customer:
-        precision = frappe.get_precision(
-            "Sales Invoice", "outstanding_amount") or 2
+        precision = frappe.get_precision("Sales Invoice", "outstanding_amount") or 2
         outstanding_invoices = _get_outstanding_invoices(
             party_type="Customer",
             party=customer,
             account=get_party_account("Customer", customer, company),
         )
-        print(outstanding_invoices)
         invoices_list = []
-        customer_name = frappe.get_cached_value(
-            "Customer", customer, "customer_name")
+        customer_name = frappe.get_cached_value("Customer", customer, "customer_name")
         for invoice in outstanding_invoices:
             if invoice.get("currency") == currency:
                 if pos_profile_name and frappe.get_cached_value(
@@ -234,8 +227,7 @@ def process_pos_payment(payload):
     data = json.loads(payload)
     data = frappe._dict(data)
     if not data.pos_profile.get("posa_use_pos_awesome_payments"):
-        frappe.throw(
-            _("POS Awesome Payments is not enabled for this POS Profile"))
+        frappe.throw(_("POS Awesome Payments is not enabled for this POS Profile"))
 
     # validate data
     if not data.customer:
@@ -253,10 +245,8 @@ def process_pos_payment(payload):
     currency = data.currency
     customer = data.customer
     pos_opening_shift_name = data.pos_opening_shift_name
-    allow_make_new_payments = data.pos_profile.get(
-        "posa_allow_make_new_payments")
-    allow_reconcile_payments = data.pos_profile.get(
-        "posa_allow_reconcile_payments")
+    allow_make_new_payments = data.pos_profile.get("posa_allow_make_new_payments")
+    allow_reconcile_payments = data.pos_profile.get("posa_allow_reconcile_payments")
     allow_mpesa_reconcile_payments = data.pos_profile.get(
         "posa_allow_mpesa_reconcile_payments"
     )
@@ -382,8 +372,7 @@ def process_pos_payment(payload):
         msg += "<tbody>"
         for payment_entry in new_payments_entry:
             msg += "<tr><td>{0}</td><td>{1}</td></tr>".format(
-                payment_entry.get("name"), payment_entry.get(
-                    "unallocated_amount")
+                payment_entry.get("name"), payment_entry.get("unallocated_amount")
             )
         msg += "</tbody>"
         msg += "</table>"
@@ -394,8 +383,7 @@ def process_pos_payment(payload):
         msg += "<tbody>"
         for payment_entry in all_payments_entry:
             msg += "<tr><td>{0}</td><td>{1}</td></tr>".format(
-                payment_entry.get("name"), payment_entry.get(
-                    "unallocated_amount")
+                payment_entry.get("name"), payment_entry.get("unallocated_amount")
             )
         msg += "</tbody>"
         msg += "</table>"
