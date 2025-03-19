@@ -1,83 +1,202 @@
 <template>
   <v-row justify="center">
-    <v-dialog v-model="customerDialog" max-width="600px" @click:outside="clear_customer">
+    <v-dialog
+      v-model="customerDialog"
+      max-width="600px"
+      @click:outside="clear_customer"
+    >
       <v-card>
         <v-card-title>
-          <span v-if="customer_id" class="text-h5 text-primary">{{
-            __('Update Customer')
+          <span v-if="customer_id" class="headline primary--text">{{
+            __("Update Customer")
           }}</span>
-          <span v-else class="text-h5 text-primary">{{
-            __('Create Customer')
+          <span v-else class="headline primary--text">{{
+            __("Create Customer")
           }}</span>
         </v-card-title>
         <v-card-text class="pa-0">
           <v-container>
             <v-row>
               <v-col cols="12">
-                <v-text-field density="compact" color="primary" :label="frappe._('Customer Name') + ' *'"
-                  bg-color="white" hide-details v-model="customer_name"></v-text-field>
+                <v-text-field
+                  dense
+                  color="primary"
+                  :label="frappe._('Customer Name') + ' *'"
+                  background-color="white"
+                  hide-details
+                  v-model="customer_name"
+                ></v-text-field>
               </v-col>
               <v-col cols="6">
-                <v-text-field density="compact" color="primary" :label="frappe._('Tax ID')" bg-color="white"
-                  hide-details v-model="tax_id"></v-text-field>
+                <v-text-field
+                  dense
+                  color="primary"
+                  :label="frappe._('Tax ID')"
+                  background-color="white"
+                  hide-details
+                  v-model="tax_id"
+                ></v-text-field>
+              </v-col>
+              <v-col cols="2" style="padding-right: 0px">
+                <v-text-field
+                  dense
+                  v-model="countryCode"
+                  placeholder="+218"
+                  background-color="white"
+                  hide-details
+                ></v-text-field>
+              </v-col>
+
+              <v-col cols="4" style="padding-left: 0px">
+                <v-text-field
+                  dense
+                  color="primary"
+                  :label="frappe._('Mobile No')"
+                  background-color="white"
+                  hide-details
+                  v-model="mobile_no"
+                >
+                  <!-- <template v-slot:prepend-inner>
+                    
+                  </template> -->
+                </v-text-field>
               </v-col>
               <v-col cols="6">
-                <v-text-field density="compact" color="primary" :label="frappe._('Mobile No')" bg-color="white"
-                  hide-details v-model="mobile_no"></v-text-field>
+                <v-text-field
+                  dense
+                  color="primary"
+                  :label="frappe._('Email Id')"
+                  background-color="white"
+                  hide-details
+                  v-model="email_id"
+                ></v-text-field>
               </v-col>
               <v-col cols="6">
-                <v-text-field density="compact" color="primary" :label="frappe._('Email Id')" bg-color="white"
-                  hide-details v-model="email_id"></v-text-field>
+                <v-select
+                  dense
+                  label="Gender"
+                  :items="genders"
+                  v-model="gender"
+                ></v-select>
               </v-col>
               <v-col cols="6">
-                <v-select density="compact" label="Gender" :items="genders" v-model="gender"></v-select>
+                <v-text-field
+                  dense
+                  color="primary"
+                  :label="frappe._('Referral Code')"
+                  background-color="white"
+                  hide-details
+                  v-model="referral_code"
+                ></v-text-field>
               </v-col>
               <v-col cols="6">
-                <v-text-field density="compact" color="primary" :label="frappe._('Referral Code')" bg-color="white"
-                  hide-details v-model="referral_code"></v-text-field>
-              </v-col>
-              <v-col cols="6">
-                <v-menu ref="birthday_menu" v-model="birthday_menu" :close-on-content-click="false"
-                  transition="scale-transition" density="default">
-                  <template v-slot:activator="{ props }">
-                    <v-text-field v-model="birthday" :label="frappe._('Birthday')" readonly density="compact" clearable
-                      hide-details v-bind="props" color="primary"></v-text-field>
+                <v-menu
+                  ref="birthday_menu"
+                  v-model="birthday_menu"
+                  :close-on-content-click="false"
+                  transition="scale-transition"
+                  dense
+                >
+                  <template v-slot:activator="{ on, attrs }">
+                    <v-text-field
+                      v-model="birthday"
+                      :label="frappe._('Birthday')"
+                      readonly
+                      dense
+                      clearable
+                      hide-details
+                      v-bind="attrs"
+                      v-on="on"
+                      color="primary"
+                    ></v-text-field>
                   </template>
-                  <v-date-picker v-model="birthday" color="primary" no-title scrollable
-                    :max="frappe.datetime.now_date()" @input="birthday_menu = false">
+                  <v-date-picker
+                    v-model="birthday"
+                    color="primary"
+                    no-title
+                    scrollable
+                    :max="frappe.datetime.now_date()"
+                    @input="birthday_menu = false"
+                  >
                   </v-date-picker>
                 </v-menu>
               </v-col>
               <v-col cols="6">
-                <v-autocomplete clearable density="compact" auto-select-first color="primary"
-                  :label="frappe._('Customer Group') + ' *'" v-model="group" :items="groups" bg-color="white"
-                  :no-data-text="__('Group not found')" hide-details required>
+                <v-autocomplete
+                  clearable
+                  dense
+                  auto-select-first
+                  color="primary"
+                  :label="frappe._('Customer Group') + ' *'"
+                  v-model="group"
+                  :items="groups"
+                  background-color="white"
+                  :no-data-text="__('Group not found')"
+                  hide-details
+                  required
+                >
                 </v-autocomplete>
               </v-col>
               <v-col cols="6">
-                <v-autocomplete clearable density="compact" auto-select-first color="primary"
-                  :label="frappe._('Territory') + ' *'" v-model="territory" :items="territorys" bg-color="white"
-                  :no-data-text="__('Territory not found')" hide-details required>
+                <v-autocomplete
+                  clearable
+                  dense
+                  auto-select-first
+                  color="primary"
+                  :label="frappe._('Territory') + ' *'"
+                  v-model="territory"
+                  :items="territorys"
+                  background-color="white"
+                  :no-data-text="__('Territory not found')"
+                  hide-details
+                  required
+                >
                 </v-autocomplete>
               </v-col>
               <v-col cols="6" v-if="loyalty_program">
-                <v-text-field v-model="loyalty_program" :label="frappe._('Loyalty Program')" density="compact" readonly
-                  hide-details></v-text-field>
+                <v-text-field
+                  v-model="loyalty_program"
+                  :label="frappe._('Loyalty Program')"
+                  dense
+                  readonly
+                  hide-details
+                ></v-text-field>
               </v-col>
+
+              <v-col cols="6">
+                <v-autocomplete
+                  clearable
+                  dense
+                  color="primary"
+                  :label="frappe._('Sales Partner')"
+                  v-model="sales_partner"
+                  :items="sales_partners"
+                  background-color="white"
+                  :no-data-text="__('No Sales Partners Were Found!')"
+                  hide-details
+                >
+                </v-autocomplete>
+              </v-col>
+
               <v-col cols="6" v-if="loyalty_points">
-                <v-text-field v-model="loyalty_points" :label="frappe._('Loyalty Points')" density="compact" readonly
-                  hide-details></v-text-field>
+                <v-text-field
+                  v-model="loyalty_points"
+                  :label="frappe._('Loyalty Points')"
+                  dense
+                  readonly
+                  hide-details
+                ></v-text-field>
               </v-col>
             </v-row>
           </v-container>
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="error" theme="dark" @click="close_dialog">{{
-            __('Close')
+          <v-btn color="error" dark @click="close_dialog">{{
+            __("Close")
           }}</v-btn>
-          <v-btn color="success" theme="dark" @click="submit_dialog">{{
-            __('Submit')
+          <v-btn color="success" dark @click="submit_dialog">{{
+            __("Submit")
           }}</v-btn>
         </v-card-actions>
       </v-card>
@@ -86,26 +205,30 @@
 </template>
 
 <script>
-
+import { evntBus } from "../../bus";
 export default {
   data: () => ({
     customerDialog: false,
-    pos_profile: '',
-    customer_id: '',
-    customer_name: '',
-    tax_id: '',
-    mobile_no: '',
-    email_id: '',
-    referral_code: '',
-    birthday: new Date(),
+    pos_profile: "",
+    pos_settings_panel: "",
+    countryCode: "",
+    customer_id: "",
+    customer_name: "",
+    tax_id: "",
+    mobile_no: "",
+    email_id: "",
+    referral_code: "",
+    birthday: null,
     birthday_menu: false,
-    group: '',
+    group: "",
     groups: [],
-    territory: '',
+    territory: "",
     territorys: [],
+    sales_partner: "",
+    sales_partners: [],
     genders: [],
-    customer_type: 'Individual',
-    gender: '',
+    customer_type: "Individual",
+    gender: "",
     loyalty_points: null,
     loyalty_program: null,
   }),
@@ -116,17 +239,17 @@ export default {
       this.clear_customer();
     },
     clear_customer() {
-      this.customer_name = '';
-      this.tax_id = '';
-      this.mobile_no = '';
-      this.email_id = '';
-      this.referral_code = '';
-      this.birthday = '';
-      this.group = frappe.defaults.get_user_default('Customer Group');
-      this.territory = frappe.defaults.get_user_default('Territory');
-      this.customer_id = '';
-      this.customer_type = 'Individual';
-      this.gender = '';
+      this.customer_name = "";
+      this.tax_id = "";
+      this.mobile_no = "";
+      this.email_id = "";
+      this.referral_code = "";
+      this.birthday = "";
+      this.group = frappe.defaults.get_user_default("Customer Group");
+      this.territory = frappe.defaults.get_user_default("Territory");
+      this.customer_id = "";
+      this.customer_type = "Individual";
+      this.gender = "";
       this.loyalty_points = null;
       this.loyalty_program = null;
     },
@@ -134,11 +257,11 @@ export default {
       if (this.groups.length > 0) return;
       const vm = this;
       frappe.db
-        .get_list('Customer Group', {
-          fields: ['name'],
+        .get_list("Customer Group", {
+          fields: ["name"],
           filters: { is_group: 0 },
           limit: 1000,
-          order_by: 'name',
+          order_by: "name",
         })
         .then((data) => {
           if (data.length > 0) {
@@ -152,11 +275,11 @@ export default {
       if (this.territorys.length > 0) return;
       const vm = this;
       frappe.db
-        .get_list('Territory', {
-          fields: ['name'],
+        .get_list("Territory", {
+          fields: ["name"],
           filters: { is_group: 0 },
           limit: 5000,
-          order_by: 'name',
+          order_by: "name",
         })
         .then((data) => {
           if (data.length > 0) {
@@ -169,8 +292,8 @@ export default {
     getGenders() {
       const vm = this;
       frappe.db
-        .get_list('Gender', {
-          fields: ['name'],
+        .get_list("Gender", {
+          fields: ["name"],
           page_length: 10,
         })
         .then((data) => {
@@ -181,71 +304,92 @@ export default {
           }
         });
     },
+    getSalesPartners() {
+      if (this.sales_partners.length > 0) return;
+      const vm = this;
+      frappe.db
+        .get_list("Sales Partner", {
+          fields: ["name"],
+          limit: 5000,
+          order_by: "name",
+        })
+        .then((data) => {
+          if (data.length > 0) {
+            data.forEach((el) => {
+              vm.sales_partners.push(el.name);
+            });
+          }
+        });
+    },
     submit_dialog() {
       // validate if all required fields are filled
       if (!this.customer_name) {
-        this.eventBus.emit('show_message', {
-          title: __('Customer name is required.'),
-          color: 'error',
+        evntBus.$emit("show_mesage", {
+          text: __("Customer name is required."),
+          color: "error",
         });
         return;
       }
       if (!this.group) {
-        this.eventBus.emit('show_message', {
-          title: __('Customer group is required.'),
-          color: 'error',
+        evntBus.$emit("show_mesage", {
+          text: __("Customer group is required."),
+          color: "error",
         });
         return;
       }
       if (!this.territory) {
-        this.eventBus.emit('show_message', {
-          title: __('Customer territory is required.'),
-          color: 'error',
+        evntBus.$emit("show_mesage", {
+          text: __("Customer territory is required."),
+          color: "error",
         });
         return;
       }
+      // ? Mobile no is a pos plus field
       if (this.customer_name) {
-        var vm = this;
+        const vm = this;
         const args = {
           customer_id: this.customer_id,
           customer_name: this.customer_name,
           company: this.pos_profile.company,
           tax_id: this.tax_id,
-          mobile_no: this.mobile_no,
+
+          mobile_no: `${this.countryCode}${this.mobile_no}`,
+          default_sales_partner: this.sales_partner,
+
           email_id: this.email_id,
           referral_code: this.referral_code,
-          birthday: frappe.format(this.birthday, { fieldtype: 'Date' }),
+          birthday: this.birthday,
           customer_group: this.group,
           territory: this.territory,
           customer_type: this.customer_type,
           gender: this.gender,
-          method: this.customer_id ? 'update' : 'create',
+          method: this.customer_id ? "update" : "create",
           pos_profile_doc: this.pos_profile,
         };
         frappe.call({
-          method: 'posawesome.posawesome.api.posapp.create_customer',
+          method: "posawesome.posawesome.api.posapp.create_customer",
           args: args,
           callback: (r) => {
             if (!r.exc && r.message.name) {
-              let text = __('Customer created successfully.');
+              let text = __("Customer created successfully.");
               if (vm.customer_id) {
-                text = __('Customer updated successfully.');
+                text = __("Customer updated successfully.");
               }
-              vm.eventBus.emit('show_message', {
+              evntBus.$emit("show_mesage", {
                 text: text,
-                color: 'success',
+                color: "success",
               });
               args.name = r.message.name;
-              frappe.utils.play_sound('submit');
-              vm.eventBus.emit('add_customer_to_list', args);
-              vm.eventBus.emit('set_customer', r.message.name);
-              vm.eventBus.emit('fetch_customer_details');
-              vm.close_dialog();
+              frappe.utils.play_sound("submit");
+              evntBus.$emit("add_customer_to_list", args);
+              evntBus.$emit("set_customer", r.message.name);
+              evntBus.$emit("fetch_customer_details");
+              this.close_dialog();
             } else {
-              frappe.utils.play_sound('error');
-              vm.eventBus.emit('show_message', {
-                title: __('Customer creation failed.'),
-                color: 'error',
+              frappe.utils.play_sound("error");
+              evntBus.$emit("show_mesage", {
+                text: __("Customer creation failed."),
+                color: "error",
               });
             }
           },
@@ -255,7 +399,7 @@ export default {
     },
   },
   created: function () {
-    this.eventBus.on('open_update_customer', (data) => {
+    evntBus.$on("open_update_customer", (data) => {
       this.customerDialog = true;
       if (data) {
         this.customer_name = data.customer_name;
@@ -272,18 +416,30 @@ export default {
         this.gender = data.gender;
       }
     });
-    this.eventBus.on('register_pos_profile', (data) => {
+    evntBus.$on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
+      this.pos_settings_panel = data.pos_settings_panel;
+      this.countryCode = this.pos_settings_panel.country_code || "+218";
+      this.group =
+        this.pos_settings_panel.default_customer_group ||
+        frappe.defaults.get_user_default("Customer Group");
+      this.territory =
+        this.pos_settings_panel.default_customer_territory ||
+        frappe.defaults.get_user_default("Territory");
+      console.log(this.group, this.territory);
     });
-    this.eventBus.on('payments_register_pos_profile', (data) => {
+    evntBus.$on("payments_register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
     });
     this.getCustomerGroups();
     this.getCustomerTerritorys();
     this.getGenders();
+    this.getSalesPartners();
     // set default values for customer group and territory from user defaults
-    this.group = frappe.defaults.get_user_default('Customer Group');
-    this.territory = frappe.defaults.get_user_default('Territory');
+
+    this.group = frappe.defaults.get_user_default("Customer Group");
+    this.territory = frappe.defaults.get_user_default("Territory");
+    console.log(this.group, this.territory);
   },
 };
 </script>

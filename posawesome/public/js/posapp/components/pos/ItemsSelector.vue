@@ -1,42 +1,96 @@
 <template>
   <div>
-    <v-card class="selection mx-auto bg-grey-lighten-5 mt-3" style="max-height: 75vh; height: 75vh">
-      <v-progress-linear :active="loading" :indeterminate="loading" absolute :location="top"
-        color="info"></v-progress-linear>
+    <v-card
+      class="selection mx-auto grey lighten-5 mt-3"
+      style="max-height: 75vh; height: 75vh"
+    >
+      <v-progress-linear
+        :active="loading"
+        :indeterminate="loading"
+        absolute
+        top
+        color="info"
+      ></v-progress-linear>
       <v-row class="items px-2 py-1">
-        <v-col class="pb-0 mb-2">
-          <v-text-field density="compact" clearable autofocus variant="outlined" color="primary"
-            :label="frappe._('Search Items')" hint="Search by item code, serial number, batch no or barcode"
-            bg-color="white" hide-details v-model="debounce_search" @keydown.esc="esc_event"
-            @keydown.enter="search_onchange" ref="debounce_search"></v-text-field>
+        <v-col cols="8" class="pb-0 mb-2">
+          <v-text-field
+            dense
+            clearable
+            autofocus
+            outlined
+            color="primary"
+            :label="frappe._('Search Items')"
+            hint="Search by item code, serial number, batch no or barcode"
+            background-color="white"
+            hide-details
+            v-model="debounce_search"
+            @keydown.esc="esc_event"
+            @keydown.enter="search_onchange"
+            ref="debounce_search"
+          ></v-text-field>
+        </v-col>
+        <v-col cols="4">
+          <TagFilters />
         </v-col>
         <v-col cols="3" class="pb-0 mb-2" v-if="pos_profile.posa_input_qty">
-          <v-text-field density="compact" variant="outlined" color="primary" :label="frappe._('QTY')" bg-color="white"
-            hide-details v-model.number="qty" type="number" @keydown.enter="enter_event"
-            @keydown.esc="esc_event"></v-text-field>
+          <v-text-field
+            dense
+            outlined
+            color="primary"
+            :label="frappe._('QTY')"
+            background-color="white"
+            hide-details
+            v-model.number="qty"
+            type="number"
+            @keydown.enter="enter_event"
+            @keydown.esc="esc_event"
+          ></v-text-field>
         </v-col>
         <v-col cols="2" class="pb-0 mb-2" v-if="pos_profile.posa_new_line">
-          <v-checkbox v-model="new_line" color="accent" value="true" label="NLine" density="default"
-            hide-details></v-checkbox>
+          <v-checkbox
+            v-model="new_line"
+            color="accent"
+            value="true"
+            label="NLine"
+            dense
+            hide-details
+          ></v-checkbox>
         </v-col>
         <v-col cols="12" class="pt-0 mt-0">
           <div fluid class="items" v-if="items_view == 'card'">
-            <v-row density="default" class="overflow-y-auto" style="max-height: 67vh">
-              <v-col v-for="(item, idx) in filtered_items" :key="idx" xl="2" lg="3" md="6" sm="6" cols="6"
-                min-height="50">
+            <v-row dense class="overflow-y-auto" style="max-height: 67vh">
+              <v-col
+                v-for="(item, idx) in filtred_items"
+                :key="idx"
+                xl="2"
+                lg="3"
+                md="6"
+                sm="6"
+                cols="6"
+                min-height="50"
+              >
                 <v-card hover="hover" @click="add_item(item)">
-                  <v-img :src="item.image ||
-                    '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'
-                    " class="text-white align-end" gradient="to bottom, rgba(0,0,0,0), rgba(0,0,0,0.4)" height="100px">
-                    <v-card-text v-text="item.item_name" class="text-caption px-1 pb-0"></v-card-text>
+                  <v-img
+                    :src="
+                      item.image ||
+                      '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'
+                    "
+                    class="white--text align-end"
+                    gradient="to bottom, rgba(0,0,0,0), rgba(0,0,0,0.4)"
+                    height="100px"
+                  >
+                    <v-card-text
+                      v-text="item.item_name"
+                      class="text-caption px-1 pb-0"
+                    ></v-card-text>
                   </v-img>
                   <v-card-text class="text--primary pa-1">
-                    <div class="text-caption text-primary">
+                    <div class="text-caption primary--text">
                       {{ currencySymbol(item.currency) || "" }}
-                      {{ formatCurrency(item.rate) || 0 }}
+                      {{ formtCurrency(item.rate) || 0 }}
                     </div>
                     <div class="text-caption golden--text">
-                      {{ formatFloat(item.actual_qty) || 0 }}
+                      {{ formtFloat(item.actual_qty) || 0 }}
                       {{ item.stock_uom || "" }}
                     </div>
                   </v-card-text>
@@ -46,45 +100,93 @@
           </div>
           <div fluid class="items" v-if="items_view == 'list'">
             <div class="my-0 py-0 overflow-y-auto" style="max-height: 65vh">
-              <v-data-table :headers="getItemsHeaders()" :items="filtered_items" item-key="item_code" item-value="item-"
-                class="elevation-1" :items-per-page="itemsPerPage" hide-default-footer @click:row="click_item_row">
-                <template v-slot:item.rate="{ item }">
-                  <span class="text-primary">{{ currencySymbol(item.currency) }}
-                    {{ formatCurrency(item.rate) }}</span>
-                </template>
-                <template v-slot:item.actual_qty="{ item }">
-                  <span class="golden--text">{{
-                    formatFloat(item.actual_qty)
+              <template>
+                <v-data-table
+                  :headers="getItmesHeaders()"
+                  :items="filtred_items"
+                  item-key="item_code"
+                  class="elevation-1"
+                  :items-per-page="itemsPerPage"
+                  hide-default-footer
+                  @click:row="add_item"
+                >
+                  <template v-slot:item.rate="{ item }">
+                    <span class="primary--text"
+                      >{{ currencySymbol(item.currency) }}
+                      {{ formtCurrency(item.rate) }}</span
+                    >
+                  </template>
+                  <template v-slot:item.actual_qty="{ item }">
+                    <span class="golden--text">{{
+                      formtFloat(item.actual_qty)
                     }}</span>
-                </template>
-              </v-data-table>
+                  </template>
+                </v-data-table>
+              </template>
             </div>
           </div>
         </v-col>
       </v-row>
     </v-card>
-    <v-card class="cards mb-0 mt-3 pa-2 bg-grey-lighten-5">
-      <v-row no-gutters align="center" justify="center">
+    <v-card class="cards mb-0 mt-3 pa-2 grey lighten-5">
+      <!-- Item Group Filter -->
+      <v-row
+        no-gutters
+        align="center"
+        justify="center"
+        class="pb-3"
+        style="
+          height: 180px;
+          overflow-y: auto;
+          background: #d3d3d359;
+          padding: 5px;
+        "
+      >
         <v-col cols="12">
-          <v-select :items="items_group" :label="frappe._('Items Group')" density="compact" variant="outlined"
-            hide-details v-model="item_group" v-on:update:model-value="search_onchange"></v-select>
+          <item-group-multi-select
+            :itemGroups="items_group"
+            :label="frappe._('Items Group')"
+            @click="setFastItemGroupFilter"
+            ref="gBtnRef"
+          />
         </v-col>
+      </v-row>
+      <!-- Item Group Filter End -->
+
+      <v-row no-gutters align="center" justify="center">
+        <!-- <v-col cols="12">
+          <v-select
+            :items="items_group"
+            :label="frappe._('Items Group')"
+            dense
+            outlined
+            hide-details
+            v-model="item_group"
+            v-on:change="search_onchange"
+          ></v-select>
+        </v-col> -->
         <v-col cols="3" class="mt-1">
-          <v-btn-toggle v-model="items_view" color="primary" group density="compact" rounded>
-            <v-btn size="small" value="list">{{ __("List") }}</v-btn>
-            <v-btn size="small" value="card">{{ __("Card") }}</v-btn>
+          <v-btn-toggle
+            v-model="items_view"
+            color="primary"
+            group
+            dense
+            rounded
+          >
+            <v-btn small value="list">{{ __("List") }}</v-btn>
+            <v-btn small value="card">{{ __("Card") }}</v-btn>
           </v-btn-toggle>
         </v-col>
         <v-col cols="4" class="mt-2">
-          <v-btn size="small" block color="primary" variant="text" @click="show_coupons">{{ couponsCount }} {{
-            __("Coupons")
-            }}</v-btn>
+          <v-btn small block color="primary" text @click="show_coupons"
+            >{{ couponsCount }} {{ __("Coupons") }}</v-btn
+          >
         </v-col>
         <v-col cols="5" class="mt-2">
-          <v-btn size="small" block color="primary" variant="text" @click="show_offers">{{ offersCount }} {{
-            __("Offers") }}
-            : {{ appliedOffersCount }}
-            {{ __("Applied") }}</v-btn>
+          <v-btn small block color="primary" text @click="show_offers"
+            >{{ offersCount }} {{ __("Offers") }} : {{ appliedOffersCount }}
+            {{ __("Applied") }}</v-btn
+          >
         </v-col>
       </v-row>
     </v-card>
@@ -92,10 +194,18 @@
 </template>
 
 <script>
-
+import { evntBus } from "../../bus";
 import format from "../../format";
 import _ from "lodash";
+import ItemGroupMultiSelect from "./ItemGroupMultiSelect.vue";
+import TagFilters from "./TagFilters.vue";
+
 export default {
+  components: {
+    ItemGroupMultiSelect,
+    TagFilters,
+  },
+
   mixins: [format],
   data: () => ({
     pos_profile: "",
@@ -113,33 +223,33 @@ export default {
     couponsCount: 0,
     appliedCouponsCount: 0,
     customer_price_list: null,
-    customer: null,
     new_line: false,
     qty: 1,
+    pos_tags_filters: [],
   }),
 
   watch: {
-    filtered_items(new_value, old_value) {
+    filtred_items(new_value, old_value) {
       if (!this.pos_profile.pose_use_limit_search) {
         if (new_value.length != old_value.length) {
           this.update_items_details(new_value);
         }
       }
     },
-    customer() {
+    customer_price_list() {
       this.get_items();
     },
     new_line() {
-      this.eventBus.emit("set_new_line", this.new_line);
+      evntBus.$emit("set_new_line", this.new_line);
     },
   },
 
   methods: {
     show_offers() {
-      this.eventBus.emit("show_offers", "true");
+      evntBus.$emit("show_offers", "true");
     },
     show_coupons() {
-      this.eventBus.emit("show_coupons", "true");
+      evntBus.$emit("show_coupons", "true");
     },
     get_items() {
       if (!this.pos_profile) {
@@ -163,7 +273,7 @@ export default {
         !vm.pos_profile.pose_use_limit_search
       ) {
         vm.items = JSON.parse(localStorage.getItem("items_storage"));
-        this.eventBus.emit("set_all_items", vm.items);
+        evntBus.$emit("set_all_items", vm.items);
         vm.loading = false;
       }
       frappe.call({
@@ -173,12 +283,12 @@ export default {
           price_list: vm.customer_price_list,
           item_group: gr,
           search_value: sr,
-          customer: vm.customer,
         },
         callback: function (r) {
           if (r.message) {
             vm.items = r.message;
-            vm.eventBus.emit("set_all_items", vm.items);
+
+            evntBus.$emit("set_all_items", vm.items);
             vm.loading = false;
             console.info("Items Loaded");
             if (
@@ -228,23 +338,24 @@ export default {
         });
       }
     },
-    getItemsHeaders() {
+    getItmesHeaders() {
       const items_headers = [
         {
-          title: __("Name"),
+          text: __("Name"),
           align: "start",
           sortable: true,
-          key: "item_name",
+          value: "item_name",
+          width: "40%",
         },
         {
-          title: __("Code"),
+          text: __("Code"),
           align: "start",
           sortable: true,
-          key: "item_code",
+          value: "item_code",
         },
-        { title: __("Rate"), key: "rate", align: "start" },
-        { title: __("Available QTY"), key: "actual_qty", align: "start" },
-        { title: __("UOM"), key: "stock_uom", align: "start" },
+        { text: __("Rate"), value: "rate", align: "start" },
+        { text: __("Ava. QTY"), value: "actual_qty", align: "start" },
+        { text: __("UOM"), value: "stock_uom", align: "start" },
       ];
       if (!this.pos_profile.posa_display_item_code) {
         items_headers.splice(1, 1);
@@ -252,28 +363,25 @@ export default {
 
       return items_headers;
     },
-    click_item_row(event, { item }) {
-      this.add_item(item)
-    },
     add_item(item) {
       item = { ...item };
       if (item.has_variants) {
-        this.eventBus.emit("open_variants_model", item, this.items);
+        evntBus.$emit("open_variants_model", item, this.items);
       } else {
         if (!item.qty || item.qty === 1) {
           item.qty = Math.abs(this.qty);
         }
-        this.eventBus.emit("add_item", item);
+        evntBus.$emit("add_item", item);
         this.qty = 1;
       }
     },
     enter_event() {
       let match = false;
-      if (!this.filtered_items.length || !this.first_search) {
+      if (!this.filtred_items.length || !this.first_search) {
         return;
       }
       const qty = this.get_item_qty(this.first_search);
-      const new_item = { ...this.filtered_items[0] };
+      const new_item = { ...this.filtred_items[0] };
       new_item.qty = flt(qty);
       new_item.item_barcode.forEach((element) => {
         if (this.search == element.barcode) {
@@ -396,7 +504,7 @@ export default {
       });
     },
     update_cur_items_details() {
-      this.update_items_details(this.filtered_items);
+      this.update_items_details(this.filtred_items);
     },
     scan_barcoud() {
       const vm = this;
@@ -414,9 +522,9 @@ export default {
       });
     },
     trigger_onscan(sCode) {
-      if (this.filtered_items.length == 0) {
-        this.eventBus.emit("show_message", {
-          title: `No Item has this barcode "${sCode}"`,
+      if (this.filtred_items.length == 0) {
+        evntBus.$emit("show_mesage", {
+          text: `No Item has this barcode "${sCode}"`,
           color: "error",
         });
         frappe.utils.play_sound("error");
@@ -426,139 +534,182 @@ export default {
         this.search = null;
       }
     },
-    generateWordCombinations(inputString) {
-      const words = inputString.split(" ");
-      const wordCount = words.length;
-      const combinations = [];
+    setFastItemGroupFilter(event, groupName) {
+      this.$refs.gBtnRef.$children.forEach((ref) => {
+        let gBtn = ref.$el;
+        let gSpan = gBtn.children[0];
+        let isGroupSelected =
+          gSpan.innerText.toLowerCase() === groupName.toLowerCase();
 
-      // Helper function to generate all permutations
-      function permute(arr, m = []) {
-        if (arr.length === 0) {
-          combinations.push(m.join(" "));
-        } else {
-          for (let i = 0; i < arr.length; i++) {
-            const current = arr.slice();
-            const next = current.splice(i, 1);
-            permute(current.slice(), m.concat(next));
+        if (isGroupSelected) {
+          if (gBtn.classList.contains("warning")) {
+            gBtn.classList.remove("warning");
+            gBtn.classList.add("primary");
+            this.item_group = "ALL";
+          } else {
+            gBtn.classList.remove("primary");
+            gBtn.classList.add("warning");
+            this.item_group = groupName;
           }
+        } else {
+          gBtn.classList.remove("warning");
+          gBtn.classList.add("primary");
         }
-      }
-
-      permute(words);
-
-      return combinations;
+      });
     },
   },
 
   computed: {
-    filtered_items() {
+    filtred_items() {
+      console.log(this.pos_profile);
       this.search = this.get_search(this.first_search);
-      if (!this.pos_profile.pose_use_limit_search) {
-        let filtred_list = [];
-        let filtred_group_list = [];
-        if (this.item_group != "ALL") {
-          filtred_group_list = this.items.filter((item) =>
-            item.item_group
-              .toLowerCase()
-              .includes(this.item_group.toLowerCase())
-          );
-        } else {
-          filtred_group_list = this.items;
-        }
-        if (!this.search || this.search.length < 3) {
-          if (
-            this.pos_profile.posa_show_template_items &&
-            this.pos_profile.posa_hide_variants_items
-          ) {
-            return (filtred_list = filtred_group_list
-              .filter((item) => !item.variant_of)
-              .slice(0, 50));
-          } else {
-            filtred_list = filtred_group_list.slice(0, 50);
-            return filtred_list;
-          }
-        } else if (this.search) {
-          filtred_list = filtred_group_list.filter((item) => {
-            let found = false;
-            for (let element of item.item_barcode) {
-              if (element.barcode == this.search) {
-                found = true;
-                break;
-              }
-            }
-            return found;
-          });
-          if (filtred_list.length == 0) {
-            filtred_list = filtred_group_list.filter((item) =>
-              item.item_code.toLowerCase().includes(this.search.toLowerCase())
+      // if (!this.pos_profile.pose_use_limit_search) {
+      let filtred_list = [];
+      let filtred_group_list = [];
+      if (this.item_group != "ALL") {
+        filtred_group_list = this.items.filter((item) =>
+          item.item_group.toLowerCase().includes(this.item_group.toLowerCase())
+        );
+      } else {
+        filtred_group_list = this.items;
+      }
+      if (this.pos_tags_filters && this.pos_tags_filters.length > 0) {
+        filtred_group_list = filtred_group_list.filter((fItem) => {
+          return fItem.pos_tags.some((itemPosTag) => {
+            return this.pos_tags_filters.some(
+              (filterPosTag) => filterPosTag.tag_name === itemPosTag.tag_name
             );
-            if (filtred_list.length == 0) {
-              const search_combinations = this.generateWordCombinations(
-                this.search
-              );
-              filtred_list = filtred_group_list.filter((item) => {
-                let found = false;
-                for (let element of search_combinations) {
-                  element = element.toLowerCase().trim();
-                  let element_regex = new RegExp(
-                    `.*${element.split("").join(".*")}.*`
-                  );
-                  if (element_regex.test(item.item_name.toLowerCase())) {
-                    found = true;
-                    break;
-                  }
-                }
-                return found;
-              });
-            }
-            if (
-              filtred_list.length == 0 &&
-              this.pos_profile.posa_search_serial_no
-            ) {
-              filtred_list = filtred_group_list.filter((item) => {
-                let found = false;
-                for (let element of item.serial_no_data) {
-                  if (element.serial_no == this.search) {
-                    found = true;
-                    this.flags.serial_no = null;
-                    this.flags.serial_no = this.search;
-                    break;
-                  }
-                }
-                return found;
-              });
-            }
-            if (
-              filtred_list.length == 0 &&
-              this.pos_profile.posa_search_batch_no
-            ) {
-              filtred_list = filtred_group_list.filter((item) => {
-                let found = false;
-                for (let element of item.batch_no_data) {
-                  if (element.batch_no == this.search) {
-                    found = true;
-                    this.flags.batch_no = null;
-                    this.flags.batch_no = this.search;
-                    break;
-                  }
-                }
-                return found;
-              });
-            }
-          }
-        }
+          });
+        });
+      }
+      // ETMS
+      if (!this.search || this.search.length < 3) {
         if (
           this.pos_profile.posa_show_template_items &&
           this.pos_profile.posa_hide_variants_items
         ) {
-          return filtred_list.filter((item) => !item.variant_of).slice(0, 50);
+          return (filtred_list = filtred_group_list
+            .filter((item) => !item.variant_of)
+            .slice(0, this.pos_profile.custom_posa_items_per_page));
         } else {
-          return filtred_list.slice(0, 50);
+          return (filtred_list = filtred_group_list.slice(
+            0,
+            this.pos_profile.custom_posa_items_per_page
+          ));
         }
-      } else {
-
-        return this.items.slice(0, 50);
+      } else if (this.search) {
+        filtred_list = filtred_group_list.filter((item) => {
+          let found = false;
+          for (let element of item.item_barcode) {
+            if (element.barcode == this.search) {
+              found = true;
+              break;
+            }
+          }
+          return found;
+        });
+        if (filtred_list.length == 0) {
+          filtred_list = filtred_group_list.filter((item) =>
+            item.item_code.toLowerCase().includes(this.search.toLowerCase())
+          );
+          if (filtred_list.length == 0) {
+            filtred_list = filtred_group_list.filter((item) =>
+              item.item_name.toLowerCase().includes(this.search.toLowerCase())
+            );
+          }
+          if (
+            filtred_list.length == 0 &&
+            this.pos_profile.posa_search_serial_no
+          ) {
+            filtred_list = filtred_group_list.filter((item) => {
+              let found = false;
+              for (let element of item.serial_no_data) {
+                if (element.serial_no == this.search) {
+                  found = true;
+                  this.flags.serial_no = null;
+                  this.flags.serial_no = this.search;
+                  break;
+                }
+              }
+              return found;
+            });
+          }
+          if (
+            filtred_list.length == 0 &&
+            this.pos_profile.posa_search_batch_no
+          ) {
+            filtred_list = filtred_group_list.filter((item) => {
+              let found = false;
+              for (let element of item.batch_no_data) {
+                if (element.batch_no == this.search) {
+                  found = true;
+                  this.flags.batch_no = null;
+                  this.flags.batch_no = this.search;
+                  break;
+                }
+              }
+              return found;
+            });
+          }
+        }
       }
+      if (
+        this.pos_profile.posa_show_template_items &&
+        this.pos_profile.posa_hide_variants_items
+      ) {
+        filtered_list = filtred_list
+          .filter((item) => !item.variant_of)
+          .slice(0, this.pos_profile.custom_posa_items_per_page);
+      } else {
+        filtered_list = filtred_list.slice(
+          0,
+          this.pos_profile.custom_posa_items_per_page
+        );
+      }
+      // Implement fuzzy search using Levenshtein distance algorithm
+      if (filtred_list.length == 0 && this.search) {
+        filtred_list = filtred_group_list.filter((items) => {
+          return levenshteinDistance(
+            items.item_name.toLowerCase(),
+            this.search.toLowerCase()
+          );
+        });
+      }
+      return filtred_list;
+      function levenshteinDistance(itemName, searchQuery) {
+        let searchWords = searchQuery.split(" ");
+        for (let i = 0; i < searchWords.length; i++) {
+          if (!itemName.includes(searchWords[i])) {
+            return false;
+          }
+        }
+        return true;
+      }
+      // }
+      // else {
+      //   filtred_list = [];
+
+      //   if (filtred_list.length == 0 && this.search) {
+      //     filtred_list = filtred_group_list.filter((items) => {
+      //       return levenshteinDistance(
+      //         items.item_name.toLowerCase(),
+      //         this.search.toLowerCase()
+      //       );
+      //     });
+      //     return filtred_list;
+      //   } else {
+      //     return this.items.slice(0, 50);
+      //   }
+      // }
+      // function levenshteinDistance(itemName, searchQuery) {
+      //   let searchWords = searchQuery.split(" ");
+      //   for (let i = 0; i < searchWords.length; i++) {
+      //     if (!itemName.includes(searchWords[i])) {
+      //       return false;
+      //     }
+      //   }
+      //   return true;
+      // }
     },
     debounce_search: {
       get() {
@@ -571,8 +722,8 @@ export default {
   },
 
   created: function () {
-    this.$nextTick(function () { });
-    this.eventBus.on("register_pos_profile", (data) => {
+    this.$nextTick(function () {});
+    evntBus.$on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
       this.get_items();
       this.get_items_groups();
@@ -580,22 +731,25 @@ export default {
         ? "card"
         : "list";
     });
-    this.eventBus.on("update_cur_items_details", () => {
+    evntBus.$on("update_cur_items_details", () => {
       this.update_cur_items_details();
     });
-    this.eventBus.on("update_offers_counters", (data) => {
+    evntBus.$on("update_offers_counters", (data) => {
       this.offersCount = data.offersCount;
       this.appliedOffersCount = data.appliedOffersCount;
     });
-    this.eventBus.on("update_coupons_counters", (data) => {
+    evntBus.$on("update_coupons_counters", (data) => {
       this.couponsCount = data.couponsCount;
       this.appliedCouponsCount = data.appliedCouponsCount;
     });
-    this.eventBus.on("update_customer_price_list", (data) => {
+    evntBus.$on("update_customer_price_list", (data) => {
       this.customer_price_list = data;
     });
-    this.eventBus.on("update_customer", (data) => {
-      this.customer = data;
+    evntBus.$on("set_pos_tags_filters", (pos_tags) => {
+      this.pos_tags_filters = pos_tags;
+    });
+    evntBus.$on("clear_pos_tags_filters", () => {
+      this.pos_tags_filters.length = 0;
     });
   },
 
