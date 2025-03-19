@@ -10,7 +10,7 @@
               <v-row>
                 <v-col md="7" cols="12">
                   <h3 style="margin-top: 10px">
-                    <strong>{{ __("Sales Order List") }}</strong>
+                    <strong>{{ __("Sales Invoice List") }}</strong>
                   </h3>
                   <v-divider></v-divider>
                 </v-col>
@@ -22,7 +22,7 @@
                       v-model="search"
                       append-icon="mdi-magnify"
                       :label="
-                        __('Search by Part of Order Name, Amount or Table Name')
+                        __('Search by Part of Invoice Name, Amount or Table Name')
                       "
                       single-line
                       hide-details
@@ -39,32 +39,42 @@
                   ></v-checkbox>
                 </v-col>
                 <v-col md="4" cols="12">
-                  <v-btn block color="warning" @click="get_list_of_orders" dark>{{
-                    __("Search")
-                  }}</v-btn>
+                  <v-btn
+                    block
+                    color="warning"
+                    @click="get_list_of_invoices"
+                    dark
+                    >{{ __("Search") }}</v-btn
+                  >
                 </v-col>
               </v-row>
               <v-divider></v-divider>
               <v-data-table
-                :headers="order_headers"
-                :items="orders_data"
+                :headers="invoice_headers"
+                :items="invoice_data"
                 item-key="name"
                 class="elevation-1 mt-0"
                 show-select
-                v-model="selected_orders"
-                :loading="order_loading"
+                v-model="selected_invoices"
+                :loading="invoice_loading"
                 checkbox-color="primary"
                 :single-select="true"
               >
+                <template #item.status="{ item }">
+                  <v-chip variant="elevated" :color="item.color">
+                    {{ item.status }}
+                  </v-chip>
+                </template>
                 <!-- @item-selected="onOrderSelected" -->
                 <template v-slot:item.grand_total="{ item }">
                   {{ currencySymbol(item.currency) }}
                   {{ formtCurrency(item.grand_total) }}
                 </template>
-                <template v-slot:item.status="{ item }">
-                  <v-chip variant="elevated" :color="item.color">
-                    {{ item.status }}
-                  </v-chip>
+                <template v-slot:item.outstanding_amount="{ item }">
+                  <span class="primary--text"
+                    >{{ currencySymbol(item.currency) }}
+                    {{ formtCurrency(item.outstanding_amount) }}</span
+                  >
                 </template>
               </v-data-table>
               <v-divider></v-divider>
@@ -77,15 +87,15 @@
           md="4"
           cols="12"
           class="pb-2 pr-0"
-          v-if="selected_orders.length != 0"
+          v-if="selected_invoices.length != 0"
         >
           <v-card
             class="invoices mx-auto grey lighten-5 mt-3 p-3"
             style="max-height: 94vh; height: 94vh"
           >
-            <h3 style="margin: 10px">Sales Order Details</h3>
+            <h3 style="margin: 10px">Sales Invoice Details</h3>
             <v-divider></v-divider>
-            <template v-if="selected_orders.length != 0">
+            <template v-if="selected_invoices.length != 0">
               <h4 class="primary--text">Totals</h4>
               <v-row class="mx-2 my-5">
                 <v-col md="8" cols="12">Grand Total</v-col>
@@ -96,7 +106,24 @@
                     color="primary"
                     background-color="white"
                     hide-details
-                    :value="selected_orders[0].grand_total"
+                    :value="selected_invoices[0].grand_total"
+                    readonly
+                    flat
+                    :prefix="currencySymbol(pos_profile_details.currency)"
+                  ></v-text-field>
+                  {{
+                }}</v-col>
+              </v-row>
+              <v-row class="mx-2 my-5">
+                <v-col md="8" cols="12">Outstanding Amount</v-col>
+                <v-col md="4" cols="12">
+                  <v-text-field
+                    class="p-0 m-0"
+                    dense
+                    color="primary"
+                    background-color="white"
+                    hide-details
+                    :value="selected_invoices[0].outstanding_amount"
                     readonly
                     flat
                     :prefix="currencySymbol(pos_profile_details.currency)"
@@ -107,11 +134,11 @@
               <v-row>
                 <v-divider></v-divider>
                 <v-data-table
-                  :headers="order_items_headers"
-                  :items="selected_order_items"
+                  :headers="invoice_items_headers"
+                  :items="selected_invoice_items"
                   item-key="name"
                   class="elevation-1 mt-0"
-                  :loading="order_loading"
+                  :loading="invoice_loading"
                   checkbox-color="primary"
                 >
                 </v-data-table>
@@ -122,6 +149,23 @@
               >
                 <v-btn block color="primary" dark @click="print_invoice">
                   {{ __("Print") }}
+                </v-btn>
+                <!-- {{ pos_profile_details }} -->
+                <!-- {{ this.selected_invoices[0] }}
+                {{ this.selected_invoices[0].posa_has_warranty }} -->
+                <v-btn
+                  class="mt-4"
+                  v-if="
+                    pos_profile_details.posa_enable_warranty_print_system &&
+                    this.selected_invoices[0] &&
+                    this.selected_invoices[0].posa_has_warranty === 'Yes'
+                  "
+                  block
+                  color="orange"
+                  dark
+                  @click="print_warranty_invoice"
+                >
+                  {{ __("Print Warranty") }}
                 </v-btn>
               </div>
             </template>
@@ -135,7 +179,7 @@
   import format from "../../format";
   import Customer from "../pos/Customer.vue";
   import UpdateCustomer from "../pos/UpdateCustomer.vue";
-  import { evntBus } from "../../bus";
+  import bus from "../../bus";
   
   export default {
     mixins: [format],
@@ -146,15 +190,14 @@
         pos_profile: "",
         pos_profile_details: {},
   
-        orders_data: [],
+        invoice_data: [],
         includeDrafts: false,
         search: "",
-        orders_loading: false,
-        selected_orders: [],
-        order_loading: false,
-        order_headers: [
+        selected_invoices: [],
+        invoice_loading: false,
+        invoice_headers: [
           {
-            text: __("Order Name"),
+            text: __("Invoice Name"),
             align: "start",
             sortable: true,
             value: "name",
@@ -169,13 +212,13 @@
             text: __("Date"),
             align: "start",
             sortable: true,
-            value: "transaction_date",
+            value: "posting_date",
           },
           {
             text: __("Due Date"),
             align: "start",
             sortable: true,
-            value: "delivery_date",
+            value: "due_date",
           },
           {
             text: __("Total"),
@@ -189,10 +232,22 @@
             sortable: true,
             value: "status",
           },
+          {
+            text: __("Outstanding"),
+            align: "end",
+            sortable: true,
+            value: "outstanding_amount",
+          },
+          {
+            text: __("Has Warranty"),
+            align: "end",
+            sortable: true,
+            value: "posa_has_warranty",
+          },
         ],
   
-        selected_order_items: [],
-        order_items_headers: [
+        selected_invoice_items: [],
+        invoice_items_headers: [
           {
             text: __("Item Name"),
             align: "start",
@@ -221,38 +276,39 @@
       };
     },
     methods: {
-      get_list_of_orders() {
-        this.orders_loading = true;
+      get_list_of_invoices() {
+        this.invoice_loading = true;
+  
         return frappe.call({
-          method: "posawesome.posawesome.api.order.get_orders_list",
+          method: "posawesome.posawesome.api.invoice.get_invoices_list",
           args: { term: this.search.trim(), include_drafts: this.includeDrafts },
           callback: (r) => {
             if (r.message) {
-              this.orders_data = r.message.map((el) => {
-                el.color = ["Cancelled", "Closed"].includes(el.status)
-                  ? "red"
-                  : el.status === "Completed"
-                  ? "green"
-                  : "yellow";
-  
+              this.invoice_data = r.message.map((el) => {
+                el.color =
+                  el.status == "Unpaid" || el.status === "Overdue"
+                    ? "red"
+                    : el.status === "Paid"
+                    ? "green"
+                    : "yellow";
                 return el;
               });
+              // console.log(this.invoice_data);
             } else {
-              console.log("error");
             }
   
-            this.orders_loading = false;
+            this.invoice_loading = false;
           },
         });
       },
   
-      get_order_items() {
+      get_invoice_items() {
         return frappe.call({
-          method: "posawesome.posawesome.api.order.get_order_items",
-          args: { order: this.selected_orders[0] },
+          method: "posawesome.posawesome.api.invoice.get_invoice_items",
+          args: { invoice: this.selected_invoices[0] },
           callback: (r) => {
             if (r.message) {
-              this.selected_order_items = r.message.map((el) => {
+              this.selected_invoice_items = r.message.map((el) => {
                 el.rate = `${el.rate}  ${this.pos_profile_details.currency}`;
                 el.amount = `${el.amount} ${this.pos_profile_details.currency}`;
                 return el;
@@ -273,8 +329,8 @@
               this.pos_profile = r.message.pos_profile.name;
               //   this.pos_opening_shift = r.message.pos_opening_shift;
               //   this.get_offers(this.pos_profile.name);
-              //   evntBus.$emit("register_pos_profile", r.message);
-              //   evntBus.$emit("set_company", r.message.company);
+              //   bus.eventBus.$emit("register_pos_profile", r.message);
+              //   bus.eventBus.$emit("set_company", r.message.company);
               //   console.info("LoadPosProfile");
               // } else {
               //   this.create_opening_voucher();
@@ -282,19 +338,19 @@
           });
       },
       print_invoice() {
-        this.load_print_page(this.selected_orders[0].name);
-        // evntBus.$emit('load_invoice', this.selected[0]);
+        this.load_print_page(this.selected_invoices[0].name);
+        // bus.eventBus.$emit('load_invoice', this.selected[0]);
         // this.invoicesListDialog = false;
       },
-      load_print_page(order_name) {
+      load_print_page(invoice_name) {
         const print_format =
-          this.pos_profile.print_format_for_online ||
-          this.pos_profile.print_format;
-        const letter_head = this.pos_profile.letter_head || 0;
+          this.pos_profile_details.print_format_for_online ||
+          this.pos_profile_details.print_format;
+        const letter_head = this.pos_profile_details.letter_head || 0;
         const url =
           frappe.urllib.get_base_url() +
-          "/printview?doctype=Sales%20Order&name=" +
-          order_name +
+          "/printview?doctype=Sales%20Invoice&name=" +
+          invoice_name +
           "&trigger_print=1" +
           "&format=" +
           print_format +
@@ -311,21 +367,51 @@
           true
         );
       },
+      print_warranty_invoice() {
+        if (
+          this.selected_invoices.length > 0 &&
+          this.selected_invoices[0].posa_has_warranty === "Yes"
+        ) {
+          this.load_warranty_print_page(this.selected_invoices[0].name);
+          // bus.eventBus.$emit('load_invoice', this.selected[0]);
+          // this.invoicesListDialog = false;
+        }
+      },
+      load_warranty_print_page(invoice_name) {
+        const letter_head = this.pos_profile_details.letter_head || 0;
+        const url =
+          frappe.urllib.get_base_url() +
+          "/printview?doctype=Sales%20Invoice&name=" +
+          invoice_name +
+          "&trigger_print=1" +
+          "&format=" +
+          this.pos_profile_details.posa_warranty_print_format +
+          "&no_letterhead=" +
+          letter_head;
+        const printWindow = window.open(url, "PrintWarranty");
+        printWindow.addEventListener(
+          "load",
+          function () {
+            printWindow.print();
+            // printWindow.close();
+          },
+          true
+        );
+      },
     },
-  
     watch: {
-      selected_orders(value, old) {
-        this.get_order_items();
+      selected_invoices(value, old) {
+        this.get_invoice_items();
       },
       includeDrafts() {
-        this.get_list_of_orders();
+        this.get_list_of_invoices();
       },
     },
   
     mounted: function () {
       this.$nextTick(function () {
         this.check_opening_entry();
-        this.get_list_of_orders();
+        this.get_list_of_invoices();
       });
     },
   };
