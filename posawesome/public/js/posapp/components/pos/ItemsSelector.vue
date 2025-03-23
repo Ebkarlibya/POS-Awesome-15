@@ -14,10 +14,6 @@
 
       <v-row class="items px-2 py-1">
         <v-col cols="8" class="pb-0 mb-2">
-          <!-- مساحة فارغة أو محتوى آخر -->
-        </v-col>
-
-        <v-col class="pb-0 mb-2">
           <v-text-field
             density="compact"
             clearable
@@ -35,6 +31,9 @@
           ></v-text-field>
         </v-col>
 
+        <v-col cols="4">
+          <TagFilters />
+        </v-col>
         <v-col cols="3" class="pb-0 mb-2" v-if="pos_profile.posa_input_qty">
           <v-text-field
             density="compact"
@@ -59,10 +58,6 @@
             density="default"
             hide-details
           ></v-checkbox>
-        </v-col>
-
-        <v-col cols="4">
-          <TagFilters />
         </v-col>
 
         <!-- اختيار طريقة العرض (بطاقات أم قائمة) -->
@@ -117,6 +112,7 @@
           <!-- عرض القائمة -->
           <div fluid class="items" v-if="items_view === 'list'">
             <div class="my-0 py-0 overflow-y-auto" style="max-height: 65vh">
+            <template>
               <v-data-table
                 :headers="getItemsHeaders()"
                 :items="filtered_items"
@@ -138,6 +134,7 @@
                   </span>
                 </template>
               </v-data-table>
+            </template>
             </div>
           </div>
         </v-col>
@@ -167,6 +164,17 @@
       <!-- Item Group Filter End -->
 
       <v-row no-gutters align="center" justify="center">
+        <!-- <v-col cols="12">
+          <v-select
+            :items="items_group"
+            :label="frappe._('Items Group')"
+            dense
+            outlined
+            hide-details
+            v-model="item_group"
+            v-on:change="search_onchange"
+          ></v-select>
+        </v-col> -->
         <v-col cols="3" class="mt-1">
           <v-btn-toggle
             v-model="items_view"
