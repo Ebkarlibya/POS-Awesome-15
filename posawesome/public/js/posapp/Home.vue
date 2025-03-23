@@ -11,8 +11,8 @@
 import Navbar from './components/Navbar.vue';
 import POS from './components/pos/Pos.vue';
 import Payments from './components/payments/Pay.vue';
-// import Orders from "./components/sales_order/SalesOrder.vue";
-// import Invoices from "./components/sales_invoice/Invoices.vue";
+import Orders from "./components/sales_order/SalesOrder.vue";
+import Invoices from "./components/sales_invoice/Invoices.vue";
 export default {
   data: function () {
     return {
@@ -23,8 +23,8 @@ export default {
     Navbar,
     POS,
     Payments,
-    // Orders,
-    // Invoices,
+    Orders,
+    Invoices,
   },
   methods: {
     setPage(page) {

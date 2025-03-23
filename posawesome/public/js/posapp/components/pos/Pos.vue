@@ -2,27 +2,26 @@
   <div fluid class="mt-2">
     <ClosingDialog></ClosingDialog>
     <Drafts></Drafts>
-    <SalesOrders></SalesOrders>
     <Returns></Returns>
     <NewAddress></NewAddress>
     <MpesaPayments></MpesaPayments>
     <Variants></Variants>
     <OpeningDialog v-if="dialog" :dialog="dialog"></OpeningDialog>
     <v-row v-show="!dialog">
-      <v-col v-show="!payment && !offers && !coupons" xl="5" lg="5" md="5" sm="5" cols="12" class="pos pr-0">
+      <v-col v-show="!payment && !offers && !coupons" xl="6" lg="6" md="6" sm="6" cols="12" class="pos pr-0">
         <ItemsSelector></ItemsSelector>
       </v-col>
-      <v-col v-show="offers" xl="5" lg="5" md="5" sm="5" cols="12" class="pos pr-0">
+      <v-col v-show="offers" xl="6" lg="6" md="6" sm="6" cols="12" class="pos pr-0">
         <PosOffers></PosOffers>
       </v-col>
-      <v-col v-show="coupons" xl="5" lg="5" md="5" sm="5" cols="12" class="pos pr-0">
+      <v-col v-show="coupons" xl="6" lg="6" md="6" sm="6" cols="12" class="pos pr-0">
         <PosCoupons></PosCoupons>
       </v-col>
-      <v-col v-show="payment" xl="5" lg="5" md="5" sm="5" cols="12" class="pos pr-0">
+      <v-col v-show="payment" xl="6" lg="6" md="6" sm="6" cols="12" class="pos pr-0">
         <Payments></Payments>
       </v-col>
 
-      <v-col xl="7" lg="7" md="7" sm="7" cols="12" class="pos">
+      <v-col xl="6" lg="6" md="6" sm="6" cols="12" class="pos">
         <Invoice></Invoice>
       </v-col>
     </v-row>
@@ -38,7 +37,6 @@ import Payments from './Payments.vue';
 import PosOffers from './PosOffers.vue';
 import PosCoupons from './PosCoupons.vue';
 import Drafts from './Drafts.vue';
-import SalesOrders from "./SalesOrders.vue";
 import ClosingDialog from './ClosingDialog.vue';
 import NewAddress from './NewAddress.vue';
 import Variants from './Variants.vue';
@@ -71,7 +69,6 @@ export default {
     NewAddress,
     Variants,
     MpesaPayments,
-    SalesOrders,
   },
 
   methods: {
@@ -189,13 +186,13 @@ export default {
     });
   },
   beforeUnmount() {
-    evntBus.$off('close_opening_dialog');
-    evntBus.$off('register_pos_data');
-    evntBus.$off('LoadPosProfile');
-    evntBus.$off('show_offers');
-    evntBus.$off('show_coupons');
-    evntBus.$off('open_closing_dialog');
-    evntBus.$off('submit_closing_pos');
+    this.eventBus.off('close_opening_dialog');
+    this.eventBus.off('register_pos_data');
+    this.eventBus.off('LoadPosProfile');
+    this.eventBus.off('show_offers');
+    this.eventBus.off('show_coupons');
+    this.eventBus.off('open_closing_dialog');
+    this.eventBus.off('submit_closing_pos');
   },
 };
 </script>

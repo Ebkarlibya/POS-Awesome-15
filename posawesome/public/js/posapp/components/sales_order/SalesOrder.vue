@@ -59,8 +59,7 @@
                 <!-- @item-selected="onOrderSelected" -->
                 <template v-slot:item.grand_total="{ item }">
                   {{ currencySymbol(item.currency) }}
-                  {{ formtCurrency(item.grand_total) }}
-                </template>
+                  {{ formatCurrency(amount) }}                </template>
                 <template v-slot:item.status="{ item }">
                   <v-chip variant="elevated" :color="item.color">
                     {{ item.status }}
@@ -135,7 +134,6 @@
   import format from "../../format";
   import Customer from "../pos/Customer.vue";
   import UpdateCustomer from "../pos/UpdateCustomer.vue";
-  import bus from "../../bus";
   
   export default {
     mixins: [format],

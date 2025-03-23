@@ -1,9 +1,6 @@
 <template>
   <v-row justify="center">
     <v-dialog v-model="invoicesListDialog" max-width="800px">
-      <!-- <template v-slot:activator="{ on, attrs }">
-          <v-btn color="primary" dark v-bind="attrs" v-on="on">Open Dialog</v-btn>
-        </template>-->
       <v-card>
         <v-card-title>
           <span class="headline primary--text">{{ __("Invoices List") }}</span>
@@ -16,9 +13,7 @@
                   <v-text-field
                     v-model="search"
                     append-icon="mdi-magnify"
-                    :label="
-                      __('Search by Part of Invoice Name, Amount or Table Name')
-                    "
+                    :label="__('Search by Part of Invoice Name, Amount or Table Name')"
                     single-line
                     hide-details
                   ></v-text-field>
@@ -48,23 +43,8 @@
         </v-card-text>
         <v-card-actions>
           <v-spacer></v-spacer>
-          <v-btn color="error" dark @click="close_dialog">{{
-            __("Close")
-          }}</v-btn>
-          <v-btn color="success" dark @click="print_invoice">{{
-            __("Print")
-          }}</v-btn>
-          <!-- <v-btn
-            color="secondary"
-            v-if="
-              pos_profile.posa_enable_warranty_print_system &&
-              this.selected[0] &&
-              this.selected[0].posa_has_warranty === 'Yes'
-            "
-            dark
-            @click="print_warranty_invoice"
-            >{{ __("Print Warranty") }}</v-btn
-          > -->
+          <v-btn color="error" dark @click="close_dialog">{{ __("Close") }}</v-btn>
+          <v-btn color="success" dark @click="print_invoice">{{ __("Print") }}</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
@@ -72,9 +52,7 @@
 </template>
 
 <script>
-import { evntBus } from "../../bus";
 export default {
-  // props: ["draftsDialog"],
   data: () => ({
     invoicesListDialog: false,
     singleSelect: true,
@@ -82,6 +60,7 @@ export default {
     selected: [],
     invoices_data: [],
     search: "",
+    pos_profile: null, // تمت إضافته هنا
     headers: [
       {
         text: __("Customer"),
@@ -116,6 +95,7 @@ export default {
       },
     ],
   }),
+
   watch: {
     search(value) {
       this.search_invoice(value);
@@ -124,6 +104,7 @@ export default {
       this.search_invoice(value);
     },
   },
+
   methods: {
     close_dialog() {
       this.invoicesListDialog = false;
@@ -132,85 +113,50 @@ export default {
     print_invoice() {
       if (this.selected.length > 0) {
         this.load_print_page(this.selected[0].name);
-        // evntBus.$emit('load_invoice', this.selected[0]);
-        // this.invoicesListDialog = false;
       }
     },
-    print_warranty_invoice() {
-      if (
-        this.selected.length > 0 &&
-        this.selected[0].posa_has_warranty === "Yes"
-      ) {
-        this.load_warranty_print_page(this.selected[0].name);
-        // evntBus.$emit('load_invoice', this.selected[0]);
-        // this.invoicesListDialog = false;
-      }
-    },
+
     load_print_page(invoice_name) {
       const print_format =
-        this.pos_profile.print_format_for_online ||
-        this.pos_profile.print_format;
+        this.pos_profile.print_format_for_online || this.pos_profile.print_format;
       const letter_head = this.pos_profile.letter_head || 0;
-      const url =
-        frappe.urllib.get_base_url() +
-        "/printview?doctype=Sales%20Invoice&name=" +
-        invoice_name +
-        "&trigger_print=1" +
-        "&format=" +
-        print_format +
-        "&no_letterhead=" +
-        letter_head;
+      const url = `${frappe.urllib.get_base_url()}/printview?doctype=Sales%20Invoice&name=${
+        invoice_name
+      }&trigger_print=1&format=${print_format}&no_letterhead=${letter_head}`;
+      
       const printWindow = window.open(url, "Print");
       printWindow.addEventListener(
         "load",
-        function () {
+        () => {
           printWindow.print();
-          // printWindow.close();
-          // NOTE : uncomoent this to auto closing printing window
         },
         true
       );
     },
-    load_warranty_print_page(invoice_name) {
-      const letter_head = this.pos_profile.letter_head || 0;
-      const url =
-        frappe.urllib.get_base_url() +
-        "/printview?doctype=Sales%20Invoice&name=" +
-        invoice_name +
-        "&trigger_print=1" +
-        "&format=" +
-        this.pos_profile.posa_warranty_print_format +
-        "&no_letterhead=" +
-        letter_head;
-      const printWindow = window.open(url, "PrintWarranty");
-      printWindow.addEventListener(
-        "load",
-        function () {
-          printWindow.print();
-          // printWindow.close();
-        },
-        true
-      );
-    },
+
     search_invoice() {
       frappe.call({
         method: "posawesome.posawesome.api.invoice.get_invoices_list",
-        args: { term: this.search.trim(), include_drafts: this.includeDrafts },
+        args: { 
+          term: this.search.trim(), 
+          include_drafts: this.includeDrafts 
+        },
         callback: (r) => {
-          this.invoices_data = r.message.map((el) => {
-            el.status = `(${el.docstatus === 0 ? "Draft" : "Submitted"})`;
-            return el;
-          });
-          console.log(this.invoices_data);
+          this.invoices_data = r.message.map((el) => ({
+            ...el,
+            status: `(${el.docstatus === 0 ? "Draft" : "Submitted"})`
+          }));
         },
       });
     },
   },
-  created: function () {
-    evntBus.$on("register_pos_profile", (data) => {
+
+  created() {
+    // تصحيح اسم eventBus وإضافة الـ listeners
+    this.eventBus.on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
 
-      if (this.pos_profile.posa_enable_pos_restaurant_table) {
+      if (this.pos_profile?.posa_enable_pos_restaurant_table) {
         this.headers.push({
           text: __("Table"),
           value: "posa_pos_restaurant_table",
@@ -218,21 +164,21 @@ export default {
           sortable: true,
         });
       }
-      // if (this.pos_profile.posa_enable_warranty_print_system) {
-      //   this.headers.push({
-      //     text: __("Has Warranty"),
-      //     value: "posa_has_warranty",
-      //     align: "start",
-      //     sortable: true,
-      //   });
-      // }
     });
-    evntBus.$on("open_invoices_list", (data) => {
+
+    this.eventBus.on("open_invoices_list", () => {
       this.invoicesListDialog = true;
       this.selected = [];
       this.search_invoice();
     });
+
     this.search_invoice();
+  },
+
+  beforeUnmount() {
+    // تنظيف الـ event listeners
+    this.eventBus.off("register_pos_profile");
+    this.eventBus.off("open_invoices_list");
   },
 };
 </script>

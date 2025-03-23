@@ -69,7 +69,6 @@
 </template>
 
 <script>
-import { evntBus } from "../../bus";
 export default {
   // props: ["draftsDialog"],
   data: () => ({
@@ -129,7 +128,7 @@ export default {
     print_invoice() {
       if (this.selected.length > 0) {
         this.load_print_page(this.selected[0].name);
-        // evntBus.$emit('load_invoice', this.selected[0]);
+        // this.eventBus.emit('load_invoice', this.selected[0]);
         // this.invoicesListDialog = false;
       }
     },
@@ -139,7 +138,7 @@ export default {
     //     this.selected[0].posa_has_warranty === "Yes"
     //   ) {
     //     this.load_warranty_print_page(this.selected[0].name);
-    //     // evntBus.$emit('load_invoice', this.selected[0]);
+    //     // this.eventBus.emit('load_invoice', this.selected[0]);
     //     // this.invoicesListDialog = false;
     //   }
     // },
@@ -204,7 +203,7 @@ export default {
     },
   },
   created: function () {
-    evntBus.$on("register_pos_profile", (data) => {
+    this.eventBus.on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
 
       if (this.pos_profile.posa_enable_pos_restaurant_table) {
@@ -215,21 +214,21 @@ export default {
           sortable: true,
         });
       }
-      // if (this.pos_profile.posa_enable_warranty_print_system) {
-      //   this.headers.push({
-      //     text: __("Has Warranty"),
-      //     value: "posa_has_warranty",
-      //     align: "start",
-      //     sortable: true,
-      //   });
-      // }
     });
-    evntBus.$on("open_orders_list", (data) => {
+
+    this.eventBus.on("open_orders_list", (data) => {
       this.ordersListDialog = true;
       this.selected = [];
       this.search_order();
     });
+
     this.search_order();
+  },
+
+  beforeUnmount() {
+    this.eventBus.off("register_pos_profile");
+    this.eventBus.off("open_orders_list");
   },
 };
 </script>
+

@@ -1,186 +1,184 @@
 <template>
-    <div fluid>
-      <v-row v-show="!dialog">
-        <v-col md="8" cols="12" class="pb-2 pr-0">
-          <v-card
-            class="main mx-auto grey lighten-5 mt-3 p-3 pb-16 overflow-y-auto"
-            style="max-height: 94vh; height: 94vh"
-          >
-            <div>
-              <v-row>
-                <v-col md="7" cols="12">
-                  <h3 style="margin-top: 10px">
-                    <strong>{{ __("Sales Invoice List") }}</strong>
-                  </h3>
-                  <v-divider></v-divider>
-                </v-col>
-              </v-row>
-              <v-row>
-                <v-col md="6" cols="12">
-                  <div class="mx-2 my-5">
-                    <v-text-field
-                      v-model="search"
-                      append-icon="mdi-magnify"
-                      :label="
-                        __('Search by Part of Invoice Name, Amount or Table Name')
-                      "
-                      single-line
-                      hide-details
-                    ></v-text-field>
-                  </div>
-                </v-col>
-                <v-col md="2" cols="12">
-                  <v-checkbox
-                    v-model="includeDrafts"
-                    label="Include Drafts"
-                    color="success"
-                    :value="!includeDrafts"
+  <div fluid>
+    <v-row v-show="!dialog">
+      <v-col md="8" cols="12" class="pb-2 pr-0">
+        <v-card
+          class="main mx-auto grey lighten-5 mt-3 p-3 pb-16 overflow-y-auto"
+          style="max-height: 94vh; height: 94vh"
+        >
+          <div>
+            <v-row>
+              <v-col md="7" cols="12">
+                <h3 style="margin-top: 10px">
+                  <strong>{{ __("Sales Invoice List") }}</strong>
+                </h3>
+                <v-divider></v-divider>
+              </v-col>
+            </v-row>
+            <v-row>
+              <v-col md="6" cols="12">
+                <div class="mx-2 my-5">
+                  <v-text-field
+                    v-model="search"
+                    append-icon="mdi-magnify"
+                    :label="
+                      __('Search by Part of Invoice Name, Amount or Table Name')
+                    "
+                    single-line
                     hide-details
-                  ></v-checkbox>
-                </v-col>
-                <v-col md="4" cols="12">
-                  <v-btn
-                    block
-                    color="warning"
-                    @click="get_list_of_invoices"
-                    dark
-                    >{{ __("Search") }}</v-btn
-                  >
-                </v-col>
-              </v-row>
+                  ></v-text-field>
+                </div>
+              </v-col>
+              <v-col md="2" cols="12">
+                <v-checkbox
+                  v-model="includeDrafts"
+                  label="Include Drafts"
+                  color="success"
+                  :value="!includeDrafts"
+                  hide-details
+                ></v-checkbox>
+              </v-col>
+              <v-col md="4" cols="12">
+                <v-btn
+                  block
+                  color="warning"
+                  @click="get_list_of_invoices"
+                  dark
+                  >{{ __("Search") }}</v-btn
+                >
+              </v-col>
+            </v-row>
+            <v-divider></v-divider>
+            <v-data-table
+              :headers="invoice_headers"
+              :items="invoice_data"
+              item-key="name"
+              class="elevation-1 mt-0"
+              show-select
+              v-model="selected_invoices"
+              :loading="invoice_loading"
+              checkbox-color="primary"
+              :single-select="true"
+            >
+              <template #item.status="{ item }">
+                <v-chip variant="elevated" :color="item.color">
+                  {{ item.status }}
+                </v-chip>
+              </template>
+              <!-- @item-selected="onOrderSelected" -->
+              <template v-slot:item.grand_total="{ item }">
+                {{ currencySymbol(item.currency) }}
+                {{ formatCurrency(item.grand_total) }}
+              </template>
+              <template v-slot:item.outstanding_amount="{ item }">
+                <span class="primary--text"
+                  >{{ currencySymbol(item.currency) }}
+                  {{ formatCurrency(item.outstanding_amount) }}</span
+                >
+              </template>
+            </v-data-table>
+            <v-divider></v-divider>
+          </div>
+        </v-card>
+      </v-col>
+
+      <!-- Side Panel for info -->
+      <v-col
+        md="4"
+        cols="12"
+        class="pb-2 pr-0"
+        v-if="selected_invoices.length != 0"
+      >
+        <v-card
+          class="invoices mx-auto grey lighten-5 mt-3 p-3"
+          style="max-height: 94vh; height: 94vh"
+        >
+          <h3 style="margin: 10px">Sales Invoice Details</h3>
+          <v-divider></v-divider>
+          <template v-if="selected_invoices.length != 0">
+            <h4 class="primary--text">Totals</h4>
+            <v-row class="mx-2 my-5">
+              <v-col md="8" cols="12">Grand Total</v-col>
+              <v-col md="4" cols="12">
+                <v-text-field
+                  class="p-0 m-0"
+                  dense
+                  color="primary"
+                  background-color="white"
+                  hide-details
+                  :value="selected_invoices[0].grand_total"
+                  readonly
+                  flat
+                  :prefix="currencySymbol(pos_profile_details.currency)"
+                ></v-text-field>
+                {{
+              }}</v-col>
+            </v-row>
+            <v-row class="mx-2 my-5">
+              <v-col md="8" cols="12">Outstanding Amount</v-col>
+              <v-col md="4" cols="12">
+                <v-text-field
+                  class="p-0 m-0"
+                  dense
+                  color="primary"
+                  background-color="white"
+                  hide-details
+                  :value="selected_invoices[0].outstanding_amount"
+                  readonly
+                  flat
+                  :prefix="currencySymbol(pos_profile_details.currency)"
+                ></v-text-field>
+                {{
+              }}</v-col>
+            </v-row>
+            <v-row>
               <v-divider></v-divider>
               <v-data-table
-                :headers="invoice_headers"
-                :items="invoice_data"
+                :headers="invoice_items_headers"
+                :items="selected_invoice_items"
                 item-key="name"
                 class="elevation-1 mt-0"
-                show-select
-                v-model="selected_invoices"
                 :loading="invoice_loading"
                 checkbox-color="primary"
-                :single-select="true"
               >
-                <template #item.status="{ item }">
-                  <v-chip variant="elevated" :color="item.color">
-                    {{ item.status }}
-                  </v-chip>
-                </template>
-                <!-- @item-selected="onOrderSelected" -->
-                <template v-slot:item.grand_total="{ item }">
-                  {{ currencySymbol(item.currency) }}
-                  {{ formtCurrency(item.grand_total) }}
-                </template>
-                <template v-slot:item.outstanding_amount="{ item }">
-                  <span class="primary--text"
-                    >{{ currencySymbol(item.currency) }}
-                    {{ formtCurrency(item.outstanding_amount) }}</span
-                  >
-                </template>
               </v-data-table>
-              <v-divider></v-divider>
-            </div>
-          </v-card>
-        </v-col>
-  
-        <!-- Side Panel for info -->
-        <v-col
-          md="4"
-          cols="12"
-          class="pb-2 pr-0"
-          v-if="selected_invoices.length != 0"
-        >
-          <v-card
-            class="invoices mx-auto grey lighten-5 mt-3 p-3"
-            style="max-height: 94vh; height: 94vh"
-          >
-            <h3 style="margin: 10px">Sales Invoice Details</h3>
-            <v-divider></v-divider>
-            <template v-if="selected_invoices.length != 0">
-              <h4 class="primary--text">Totals</h4>
-              <v-row class="mx-2 my-5">
-                <v-col md="8" cols="12">Grand Total</v-col>
-                <v-col md="4" cols="12">
-                  <v-text-field
-                    class="p-0 m-0"
-                    dense
-                    color="primary"
-                    background-color="white"
-                    hide-details
-                    :value="selected_invoices[0].grand_total"
-                    readonly
-                    flat
-                    :prefix="currencySymbol(pos_profile_details.currency)"
-                  ></v-text-field>
-                  {{
-                }}</v-col>
-              </v-row>
-              <v-row class="mx-2 my-5">
-                <v-col md="8" cols="12">Outstanding Amount</v-col>
-                <v-col md="4" cols="12">
-                  <v-text-field
-                    class="p-0 m-0"
-                    dense
-                    color="primary"
-                    background-color="white"
-                    hide-details
-                    :value="selected_invoices[0].outstanding_amount"
-                    readonly
-                    flat
-                    :prefix="currencySymbol(pos_profile_details.currency)"
-                  ></v-text-field>
-                  {{
-                }}</v-col>
-              </v-row>
-              <v-row>
-                <v-divider></v-divider>
-                <v-data-table
-                  :headers="invoice_items_headers"
-                  :items="selected_invoice_items"
-                  item-key="name"
-                  class="elevation-1 mt-0"
-                  :loading="invoice_loading"
-                  checkbox-color="primary"
-                >
-                </v-data-table>
-              </v-row>
-              <div
-                class="pb-6 pr-6"
-                style="position: absolute; bottom: 0; width: 100%"
+            </v-row>
+            <div
+              class="pb-6 pr-6"
+              style="position: absolute; bottom: 0; width: 100%"
+            >
+              <v-btn block color="primary" dark @click="print_invoice">
+                {{ __("Print") }}
+              </v-btn>
+              <!-- {{ pos_profile_details }} -->
+              <!-- {{ this.selected_invoices[0] }}
+              {{ this.selected_invoices[0].posa_has_warranty }} -->
+              <v-btn
+                class="mt-4"
+                v-if="
+                  pos_profile_details.posa_enable_warranty_print_system &&
+                  this.selected_invoices[0] &&
+                  this.selected_invoices[0].posa_has_warranty === 'Yes'
+                "
+                block
+                color="orange"
+                dark
+                @click="print_warranty_invoice"
               >
-                <v-btn block color="primary" dark @click="print_invoice">
-                  {{ __("Print") }}
-                </v-btn>
-                <!-- {{ pos_profile_details }} -->
-                <!-- {{ this.selected_invoices[0] }}
-                {{ this.selected_invoices[0].posa_has_warranty }} -->
-                <v-btn
-                  class="mt-4"
-                  v-if="
-                    pos_profile_details.posa_enable_warranty_print_system &&
-                    this.selected_invoices[0] &&
-                    this.selected_invoices[0].posa_has_warranty === 'Yes'
-                  "
-                  block
-                  color="orange"
-                  dark
-                  @click="print_warranty_invoice"
-                >
-                  {{ __("Print Warranty") }}
-                </v-btn>
-              </div>
-            </template>
-          </v-card>
-        </v-col>
-      </v-row>
-    </div>
-  </template>
+                {{ __("Print Warranty") }}
+              </v-btn>
+            </div>
+          </template>
+        </v-card>
+      </v-col>
+    </v-row>
+  </div>
+</template>
   
   <script>
   import format from "../../format";
   import Customer from "../pos/Customer.vue";
-  import UpdateCustomer from "../pos/UpdateCustomer.vue";
-  import bus from "../../bus";
-  
+  import UpdateCustomer from "../pos/UpdateCustomer.vue";  
   export default {
     mixins: [format],
     components: { Customer, UpdateCustomer },

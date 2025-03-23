@@ -21,7 +21,7 @@ export default {
   props: ["itemGroups", "label"],
   methods: {
     triggerSelect(event, groupName) {
-      this.$emit("click", event, groupName);
+      this.$emit("click-group", event, groupName);
     },
   },
 };

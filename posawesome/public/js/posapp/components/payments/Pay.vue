@@ -657,8 +657,8 @@ export default {
     });
   },
   beforeUnmount() {
-    evntBus.$off("update_customer");
-    evntBus.$off("fetch_customer_details");
+    this.eventBus.off("update_customer");
+    this.eventBus.off("fetch_customer_details");
   },
 };
 </script>
