@@ -140,7 +140,6 @@
         </v-col>
       </v-row>
     </v-card>
-
     <!-- بطاقة لخيارات إضافية (مثل فلاتر المجموعات) -->
     <v-card class="cards mb-0 mt-3 pa-2 bg-grey-lighten-5">
       <!-- Item Group Filter -->
@@ -155,9 +154,9 @@
           <!-- استخدام المكوّن الفرعي مع ref والاستماع للحدث click-group -->
           <item-group-multi-select
             ref="gBtnRef"
-            :itemGroups="items_group"
+            :item-groups="items_group"
             :label="frappe._('Items Group')"
-            @click-group="setFastItemGroupFilter"
+            @group-selected="handleGroupSelect"
           />
         </v-col>
       </v-row>
@@ -270,6 +269,13 @@ export default {
   },
 
   methods: {
+    // ... (بقية الـ methods كما هي مع استبدال الدالة التالية) ...
+
+    handleGroupSelect(groupName) {
+      this.item_group = groupName === this.item_group ? 'ALL' : groupName;
+      this.search_onchange();
+    },
+
     show_offers() {
       this.eventBus.emit("show_offers", "true");
     },
@@ -561,54 +567,16 @@ export default {
         this.search = null;
       }
     },
-    // دالة الفلترة الخاصة بتغيير مجموعة الأصناف
-    // تستقبل اسم المجموعة (groupName) فقط
-    setFastItemGroupFilter(groupName) {
-      console.log("Group selected:", groupName);
-      const childComponent = this.$refs.gBtnRef;
-      if (!childComponent || !childComponent.$refs.groupBtn) {
-        console.error("لم يتم العثور على الأزرار داخل المكوّن الفرعي.");
-        return;
-      }
-      // الوصول إلى المصفوفة من الأزرار داخل المكوّن الفرعي
-      const groupButtons = childComponent.$refs.groupBtn;
-      groupButtons.forEach((gBtn) => {
-        let gSpan = gBtn.querySelector("span");
-        let isGroupSelected =
-          gSpan.innerText.trim().toLowerCase() === groupName.trim().toLowerCase();
-
-        if (isGroupSelected) {
-          if (gBtn.classList.contains("warning")) {
-            gBtn.classList.remove("warning");
-            gBtn.classList.add("primary");
-            this.item_group = "ALL";
-          } else {
-            gBtn.classList.remove("primary");
-            gBtn.classList.add("warning");
-            this.item_group = groupName;
-          }
-        } else {
-          gBtn.classList.remove("warning");
-          gBtn.classList.add("primary");
-        }
-      });
-      console.log("Updated item_group:", this.item_group);
-    },
   },
 
   computed: {
     filtered_items() {
-      // الحصول على قيمة البحث من first_search
-      this.search = this.get_search(this.first_search);
-      let filtred_list = [];
+      // تعديل جزء الفلترة
       let filtred_group_list = [];
 
-      // الفلترة بناءً على مجموعة الأصناف
-      if (this.item_group !== "ALL") {
-        filtred_group_list = this.items.filter((item) =>
-          item.item_group
-            .toLowerCase()
-            .includes(this.item_group.toLowerCase())
+      if (this.item_group !== 'ALL') {
+        filtred_group_list = this.items.filter(item => 
+          item.item_group.toLowerCase() === this.item_group.toLowerCase()
         );
       } else {
         filtred_group_list = this.items;
@@ -785,5 +753,5 @@ export default {
 </script>
 
 <style scoped>
-/* يمكنك وضع أي تنسيقات إضافية هنا */
+/* ... (بقية الأنماط كما هي) ... */
 </style>
