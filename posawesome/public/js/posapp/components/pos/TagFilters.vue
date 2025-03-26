@@ -1,7 +1,6 @@
 <template>
   <div class="extra-filters-main">
     <div class="extra-filters-outside-controls" align="right">
-      <!-- <div style="display: flex"></div> -->
       <v-btn color="primary" @click="openPosTags">
         <v-badge
           color="error"
@@ -9,6 +8,9 @@
           style="position: absolute; top: 2px; left: 3px"
           v-if="isTagsFilterActive"
         >
+          <template v-slot:badge>
+            <v-icon>mdi-filter-variant</v-icon>
+          </template>
         </v-badge>
         <v-icon>mdi-filter-variant</v-icon>
       </v-btn>
@@ -26,19 +28,6 @@
     <v-dialog v-model="posTagsDialog" width="600">
       <v-card elevation="2" outlined shaped>
         <v-card-title>{{ __("POS Tags") }}</v-card-title>
-        <!-- <v-card-actions>
-              <v-btn color="primary" @click="applyPosTags">{{
-                __("Clear")
-              }}</v-btn>
-              <v-spacer></v-spacer>
-              <v-btn color="error" @click="closePosTags">{{
-                __("Close")
-              }}</v-btn>
-            </v-card-actions> -->
-        <!-- <v-card-subtitle v-if="false"
-              style="margin: 5px 3px 0px 3px; color: #0097a7 !important; font-size: 18px">
-              {{ descriptionItem.item_name }}</v-card-subtitle>
-            <br> -->
 
         <v-card-text>
           <v-row dense class="mx-5 mb-6">
@@ -51,29 +40,24 @@
               hide-details
             ></v-text-field>
           </v-row>
-          <br />
-          <template v-for="(posTag, index) in pos_tags">
-            <span>
+          <v-divider></v-divider>
+          <v-row dense class="mx-5">
+            <v-col
+              v-for="(posTag, index) in pos_tags"
+              :key="index"
+              cols="auto"
+            >
               <v-btn
                 medium
-                :color="posTag.selected ? 'warning' : 'white'"
-                style="padding: 4px"
+                :color="posTag.selected ? 'warning' : 'primary'"
+                class="white--text"
                 @click="selectPosTag(posTag)"
-                class="ms-2 mb-2"
               >
                 <strong>{{ posTag.tag_name }}</strong>
               </v-btn>
-            </span>
-            <template v-if="posTag.order_weight">
-              <template v-if="posTag.order_weight.includes('break')"
-                ><br />
-                <hr
-              /></template>
-            </template>
-          </template>
+            </v-col>
+          </v-row>
         </v-card-text>
-
-        <br /><br />
 
         <v-card-actions>
           <v-btn color="error" @click="clearPosTags">{{ __("Clear") }}</v-btn>
@@ -109,20 +93,20 @@ export default {
       this.eventBus.emit("set_pos_tags_filters", this.selectedTags);
     },
     clearPosTags() {
-      this.pos_tags.forEach((posTag) => (posTag.selected = 0));
+      this.pos_tags.forEach((posTag) => (posTag.selected = false));
       this.applyPosTags();
     },
   },
   computed: {
     selectedTags() {
-      return this.pos_tags.filter((tag) => tag.selected === true);
+      return this.pos_tags.filter((tag) => tag.selected);
     },
     isTagsFilterActive() {
-      return this.selectedTags.length > 0 ? true : false;
+      return this.selectedTags.length > 0;
     },
   },
-  created: function () {
-    this.$nextTick(function () {
+  created() {
+    this.$nextTick(() => {
       this.eventBus.on("register_pos_profile", (pos_profile) => {
         this.pos_profile = pos_profile;
       });
@@ -133,25 +117,21 @@ export default {
       type: "GET",
       callback: (r) => {
         if (r.message) {
-          this._pos_tags = r.message.map((tag) => {
-            tag["selected"] = 0;
-            return tag;
-          });
+          this._pos_tags = r.message.map((tag) => ({
+            ...tag,
+            selected: false,
+          }));
           this.pos_tags = this._pos_tags;
         }
       },
     });
   },
-
   watch: {
     search(value) {
-      // this.clearPosTags();
       if (value) {
-        this.pos_tags = [
-          ...this._pos_tags.filter((tag) =>
-            tag.tag_name.toLowerCase().includes(value.toLowerCase())
-          ),
-        ];
+        this.pos_tags = this._pos_tags.filter((tag) =>
+          tag.tag_name.toLowerCase().includes(value.toLowerCase())
+        );
       } else {
         this.pos_tags = [...this._pos_tags];
       }
@@ -159,3 +139,27 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.extra-filters-main {
+  padding: 16px;
+}
+
+/* .extra-filters-outside-controls {
+  display: flex;
+  align-items: center;
+} */
+
+.v-btn {
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.v-btn:hover {
+  background-color: #0056b3;
+  color: #ffffff;
+}
+
+.v-dialog {
+  transition: opacity 0.3s;
+}
+</style>

@@ -1,15 +1,15 @@
 <template>
   <div class="item-group-selector">
-    <v-label v-if="label">{{ label }}</v-label>
+    <v-label v-if="label" class="mb-2">{{ label }}</v-label>
     <div class="button-group">
       <v-btn
         v-for="groupName in itemGroups"
         :key="groupName"
-        variant="outlined"
+        :style="{'background-color': selectedGroup === groupName ? 'orange' : '#1867c0'}"
+        variant="contained"
         size="small"
-        :class="{ 'active-group': selectedGroup === groupName }"
+        class="group-btn white--text transition-button"
         @click="handleGroupClick(groupName)"
-        class="ms-2 mb-2"
       >
         {{ groupName }}
       </v-btn>
@@ -55,8 +55,21 @@ export default {
   gap: 8px;
 }
 
-.active-group {
-  background-color: #ffd700 !important;
-  border-color: #ffa500 !important;
+.group-btn {
+  min-width: 80px;
+  text-align: center;
+  font-size: 14px;
+  font-weight: 800;
+  border-radius: 8px;
+}
+
+/* تحريك التغييرات اللونية لإعطاء مظهر سلس */
+.transition-button {
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+/* تأكيد بقاء النص أبيض دائمًا */
+.white--text {
+  color: #fff !important;
 }
 </style>
