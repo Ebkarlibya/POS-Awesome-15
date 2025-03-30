@@ -204,7 +204,6 @@ fixtures = [
                     "Sales Order-posa_notes",
                     "Sales Order Item-posa_notes",
                     "POS Profile-posa_allow_sales_order",
-                    "POS Profile-custom_allow_select_sales_order",
                     "POS Profile-posa_column_break_112",
                     "POS Profile-posa_show_template_items",
                     "POS Profile-posa_hide_variants_items",
@@ -256,6 +255,31 @@ fixtures = [
                     "POS Profile-posa_allow_reconcile_payments",
                     "POS Profile-column_break_uolvm",
                     "POS Profile-posa_allow_mpesa_reconcile_payments",
+                    # # # # # # #
+                    # ETMS POS  #
+                    # # # # # # #
+                    # Item
+                    "Item-custom_posa_pos_tag",  # tab break
+                    "Item-custom_posa_pos_tags",  # table
+                    "Item-posa_has_warranty",  # From old pos
+                    "Item-posa_warranty_no_of_years",  # From old pos
+                    # POS Profile
+                    "POS Profile-custom_posa_different_mobile_no_field",
+                    "POS Profile-custom_posa_mobile_number_field_name",
+                    "POS Profile-custom_require_related_bausiness",
+                    "POS Profile-custom_posa_require_sales_partner",
+                    "POS Profile-custom_posa_use_amount_discount",
+                    "POS Profile-custom_posa_max_discount_amount_allowed",
+                    "POS Profile-custom_posa_is_credit_sale",
+                    "POS Profile-custom_posa_items_per_page",
+                    "POS Profile-posa_enable_warranty_print_system",  # Old Pos
+                    "POS Profile-posa_warranty_print_format",  # Old POS
+                    # Sales invoice
+                    # Option Enabled in the panel settings
+                    "Sales Invoice-custom_customer_outstanding_after_invoice",
+                    # Sales Invoice Item
+                    "Sales Invoice Item-posa_has_warranty",  # checkbox
+                    "Sales Invoice Item-posa_warranty_no_of_years",  # int
                 ),
             ]
         ],

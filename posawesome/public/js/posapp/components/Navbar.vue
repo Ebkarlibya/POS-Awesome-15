@@ -1,8 +1,14 @@
 <template>
   <nav>
+    <ListInvoices></ListInvoices>
+    <ListOrders></ListOrders>
     <v-app-bar height="40" class="elevation-2">
       <v-app-bar-nav-icon @click.stop="drawer = !drawer" class="text-grey"></v-app-bar-nav-icon>
-      <v-img src="/assets/posawesome/js/posapp/components/pos/pos.png" alt="POS Awesome" max-width="32" class="mr-2"
+      <v-img 
+      src="/assets/posawesome/js/posapp/components/pos/pos.png" 
+      alt="POS Awesome" 
+      max-width="32" 
+      class="mr-2"
         color="primary"></v-img>
       <v-toolbar-title @click="go_desk" style="cursor: pointer" class="text-uppercase text-primary">
         <span class="font-weight-light">POS</span>
@@ -38,12 +44,62 @@
                 <template v-slot:prepend>
                   <v-icon icon="mdi-printer"></v-icon>
                 </template>
+                <v-list-item-content>
+                  <v-list-item-title>
+                    {{__('Print Last Invoice')}}
+                  </v-list-item-title>
+                </v-list-item-content>
 
-                <v-list-item-title>{{
-                  __('Print Last Invoice')
-                }}</v-list-item-title>
 
               </v-list-item>
+              <v-divider class="my-0"></v-divider>
+              <!-- Open Closing Shift List -->
+              <v-list-item @click="openClosingShiftsList">
+                <v-list-item-icon>
+                  <v-icon>mdi-menu</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title>{{
+                    __("Previous Closing Shifts")
+                  }}</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+
+              <!-- Navigate to the desk straight away -->
+              <v-list-item @click="openDesk">
+                <v-list-item-icon>
+                  <v-icon>mdi-menu</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title>{{ __("Desk") }}</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item>
+
+              <!-- <v-divider class="my-0"></v-divider> -->
+
+              <!-- List Invoices to print -->
+              <!-- <v-list-item @click="openInvoicesList">
+                <v-list-item-icon>
+                  <v-icon>mdi-menu</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title>{{
+                    __("Invoices List")
+                  }}</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item> -->
+
+              <!-- List orders to print -->
+              <!-- <v-list-item @click="openOrdersList">
+                <v-list-item-icon>
+                  <v-icon>mdi-menu</v-icon>
+                </v-list-item-icon>
+                <v-list-item-content>
+                  <v-list-item-title>{{
+                    __("Orders List")
+                  }}</v-list-item-title>
+                </v-list-item-content>
+              </v-list-item> -->
               <v-divider class="my-0"></v-divider>
               <v-list-item @click="logOut">
                 <template v-slot:prepend>
@@ -113,8 +169,12 @@
 
 <script>
 
+import ListInvoices from "./pos/ListInvoices.vue";
+import ListOrders from "./pos/ListOrders.vue";
+
 export default {
   // components: {MyPopup},
+  components: { ListInvoices,ListOrders},
   data() {
     return {
       drawer: false,
@@ -133,6 +193,7 @@ export default {
       company: 'POS Awesome',
       company_img: '/assets/erpnext/images/erpnext-logo.svg',
       pos_profile: '',
+      pos_settings_panel:"",
       freeze: false,
       freezeTitle: '',
       freezeMsg: '',
@@ -152,6 +213,20 @@ export default {
         'https://github.com/yrestom/POS-Awesome',
         '_blank'
       );
+      win.focus();
+    },
+    openClosingShiftsList() {
+      const win = window.open("/app/pos-closing-shift", "_blank");
+      win.focus();
+    },
+    openInvoicesList() {
+      this.eventBus.emit("open_invoices_list");
+    },
+    openOrdersList() {
+      this.eventBus.emit("open_orders_list");
+    },
+    openDesk() {
+      const win = window.open("/app", "_blank");
       win.focus();
     },
     close_shift_dialog() {
@@ -208,20 +283,36 @@ export default {
         this.show_message(data);
       });
       this.eventBus.on('set_company', (data) => {
-        this.company = data.name;
+        this.company = data.name || "POS PLUS";
         this.company_img = data.company_logo
           ? data.company_logo
           : this.company_img;
       });
-      this.eventBus.on('register_pos_profile', (data) => {
+      this.eventBus.on("register_pos_profile", async (data) => {
+        company_logo = await frappe.db.get_value(
+          "Company",
+          data.pos_profile.company,
+          ["company_logo"]
+        );
+        company = data.pos_profile.company || "POS PLUS";
+        company_img =
+          company_logo.message.company_logo ||
+          "/assets/erpnext/images/erpnext-logo.svg";
+
         this.pos_profile = data.pos_profile;
-        const payments = { text: 'Payments', icon: 'mdi-cash-register' };
+        this.pos_settings_panel = data.pos_settings_panel
+        const payments = { text: "Payments", icon: "mdi-cash-register" };
         if (
           this.pos_profile.posa_use_pos_awesome_payments &&
           this.items.length !== 2
         ) {
           this.items.push(payments);
         }
+        this.items.push({ text: "Orders", icon: "mdi-salesforce" });
+        this.items.push({
+          text: "Invoices",
+          icon: "mdi-cash",
+        });
       });
       this.eventBus.on('set_last_invoice', (data) => {
         this.last_invoice = data;

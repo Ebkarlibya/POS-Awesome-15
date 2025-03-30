@@ -1,34 +1,98 @@
 <template>
   <div>
-    <v-card class="selection mx-auto bg-grey-lighten-5 mt-3" style="max-height: 75vh; height: 75vh">
-      <v-progress-linear :active="loading" :indeterminate="loading" absolute :location="top"
-        color="info"></v-progress-linear>
+    <v-card
+      class="selection mx-auto bg-grey-lighten-5 mt-3"
+      style="max-height: 75vh; height: 75vh"
+    >
+      <v-progress-linear
+        :active="loading"
+        :indeterminate="loading"
+        absolute
+        location="top"
+        color="info"
+      ></v-progress-linear>
+
       <v-row class="items px-2 py-1">
-        <v-col class="pb-0 mb-2">
-          <v-text-field density="compact" clearable autofocus variant="outlined" color="primary"
-            :label="frappe._('Search Items')" hint="Search by item code, serial number, batch no or barcode"
-            bg-color="white" hide-details v-model="debounce_search" @keydown.esc="esc_event"
-            @keydown.enter="search_onchange" ref="debounce_search"></v-text-field>
+        <v-col cols="8" class="pb-0 mb-2">
+          <v-text-field
+            density="compact"
+            clearable
+            autofocus
+            variant="outlined"
+            color="primary"
+            :label="frappe._('Search Items')"
+            hint="Search by item code, serial number, batch no or barcode"
+            bg-color="white"
+            hide-details
+            v-model="debounce_search"
+            @keydown.esc="esc_event"
+            @keydown.enter="search_onchange"
+            ref="debounce_search"
+          ></v-text-field>
+        </v-col>
+
+        <v-col cols="4">
+          <TagFilters />
         </v-col>
         <v-col cols="3" class="pb-0 mb-2" v-if="pos_profile.posa_input_qty">
-          <v-text-field density="compact" variant="outlined" color="primary" :label="frappe._('QTY')" bg-color="white"
-            hide-details v-model.number="qty" type="number" @keydown.enter="enter_event"
-            @keydown.esc="esc_event"></v-text-field>
+          <v-text-field
+            density="compact"
+            variant="outlined"
+            color="primary"
+            :label="frappe._('QTY')"
+            bg-color="white"
+            hide-details
+            v-model.number="qty"
+            type="number"
+            @keydown.enter="enter_event"
+            @keydown.esc="esc_event"
+          ></v-text-field>
         </v-col>
+
         <v-col cols="2" class="pb-0 mb-2" v-if="pos_profile.posa_new_line">
-          <v-checkbox v-model="new_line" color="accent" value="true" label="NLine" density="default"
-            hide-details></v-checkbox>
+          <v-checkbox
+            v-model="new_line"
+            color="accent"
+            value="true"
+            label="NLine"
+            density="default"
+            hide-details
+          ></v-checkbox>
         </v-col>
+
+        <!-- اختيار طريقة العرض (بطاقات أم قائمة) -->
         <v-col cols="12" class="pt-0 mt-0">
-          <div fluid class="items" v-if="items_view == 'card'">
-            <v-row density="default" class="overflow-y-auto" style="max-height: 67vh">
-              <v-col v-for="(item, idx) in filtered_items" :key="idx" xl="2" lg="3" md="6" sm="6" cols="6"
-                min-height="50">
-                <v-card hover="hover" @click="add_item(item)">
-                  <v-img :src="item.image ||
-                    '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'
-                    " class="text-white align-end" gradient="to bottom, rgba(0,0,0,0), rgba(0,0,0,0.4)" height="100px">
-                    <v-card-text v-text="item.item_name" class="text-caption px-1 pb-0"></v-card-text>
+          <!-- عرض البطاقات -->
+          <div fluid class="items" v-if="items_view === 'card'">
+            <v-row
+              density="default"
+              class="overflow-y-auto"
+              style="max-height: 67vh"
+            >
+              <v-col
+                v-for="(item, idx) in filtered_items"
+                :key="idx"
+                xl="2"
+                lg="3"
+                md="6"
+                sm="6"
+                cols="6"
+                min-height="50"
+              >
+                <v-card hover @click="add_item(item)">
+                  <v-img
+                    :src="
+                      item.image ||
+                      '/assets/posawesome/js/posapp/components/pos/placeholder-image.png'
+                    "
+                    class="text-white align-end"
+                    gradient="to bottom, rgba(0,0,0,0), rgba(0,0,0,0.4)"
+                    height="100px"
+                  >
+                    <v-card-text
+                      v-text="item.item_name"
+                      class="text-caption px-1 pb-0"
+                    ></v-card-text>
                   </v-img>
                   <v-card-text class="text--primary pa-1">
                     <div class="text-caption text-primary">
@@ -44,47 +108,108 @@
               </v-col>
             </v-row>
           </div>
-          <div fluid class="items" v-if="items_view == 'list'">
+
+          <!-- عرض القائمة -->
+          <div fluid class="items" v-if="items_view === 'list'">
             <div class="my-0 py-0 overflow-y-auto" style="max-height: 65vh">
-              <v-data-table :headers="getItemsHeaders()" :items="filtered_items" item-key="item_code" item-value="item-"
-                class="elevation-1" :items-per-page="itemsPerPage" hide-default-footer @click:row="click_item_row">
+            <template>
+              <v-data-table
+                :headers="getItemsHeaders()"
+                :items="filtered_items"
+                item-key="item_code"
+                class="elevation-1"
+                :items-per-page="itemsPerPage"
+                hide-default-footer
+                @click:row="click_item_row"
+              >
                 <template v-slot:item.rate="{ item }">
-                  <span class="text-primary">{{ currencySymbol(item.currency) }}
-                    {{ formatCurrency(item.rate) }}</span>
+                  <span class="text-primary">
+                    {{ currencySymbol(item.currency) }}
+                    {{ formatCurrency(item.rate) }}
+                  </span>
                 </template>
                 <template v-slot:item.actual_qty="{ item }">
-                  <span class="golden--text">{{
-                    formatFloat(item.actual_qty)
-                    }}</span>
+                  <span class="golden--text">
+                    {{ formatFloat(item.actual_qty) }}
+                  </span>
                 </template>
               </v-data-table>
+            </template>
             </div>
           </div>
         </v-col>
       </v-row>
     </v-card>
+    <!-- بطاقة لخيارات إضافية (مثل فلاتر المجموعات) -->
     <v-card class="cards mb-0 mt-3 pa-2 bg-grey-lighten-5">
-      <v-row no-gutters align="center" justify="center">
+      <!-- Item Group Filter -->
+      <v-row
+        no-gutters
+        align="center"
+        justify="center"
+        class="pb-3"
+        style="height: 180px; overflow-y: auto; background: #d3d3d359; padding: 5px;"
+      >
         <v-col cols="12">
-          <v-select :items="items_group" :label="frappe._('Items Group')" density="compact" variant="outlined"
-            hide-details v-model="item_group" v-on:update:model-value="search_onchange"></v-select>
+          <!-- استخدام المكوّن الفرعي مع ref والاستماع للحدث click-group -->
+          <item-group-multi-select
+            ref="gBtnRef"
+            :item-groups="items_group"
+            :label="frappe._('Items Group')"
+            @group-selected="handleGroupSelect"
+          />
         </v-col>
+      </v-row>
+      <!-- Item Group Filter End -->
+
+      <v-row no-gutters align="center" justify="center">
+        <!-- <v-col cols="12">
+          <v-select
+            :items="items_group"
+            :label="frappe._('Items Group')"
+            dense
+            outlined
+            hide-details
+            v-model="item_group"
+            v-on:change="search_onchange"
+          ></v-select>
+        </v-col> -->
         <v-col cols="3" class="mt-1">
-          <v-btn-toggle v-model="items_view" color="primary" group density="compact" rounded>
+          <v-btn-toggle
+            v-model="items_view"
+            color="primary"
+            group
+            density="compact"
+            rounded
+          >
             <v-btn size="small" value="list">{{ __("List") }}</v-btn>
             <v-btn size="small" value="card">{{ __("Card") }}</v-btn>
           </v-btn-toggle>
         </v-col>
+
         <v-col cols="4" class="mt-2">
-          <v-btn size="small" block color="primary" variant="text" @click="show_coupons">{{ couponsCount }} {{
-            __("Coupons")
-            }}</v-btn>
+          <v-btn
+            size="small"
+            block
+            color="primary"
+            variant="text"
+            @click="show_coupons"
+          >
+            {{ couponsCount }} {{ __("Coupons") }}
+          </v-btn>
         </v-col>
+
         <v-col cols="5" class="mt-2">
-          <v-btn size="small" block color="primary" variant="text" @click="show_offers">{{ offersCount }} {{
-            __("Offers") }}
-            : {{ appliedOffersCount }}
-            {{ __("Applied") }}</v-btn>
+          <v-btn
+            size="small"
+            block
+            color="primary"
+            variant="text"
+            @click="show_offers"
+          >
+            {{ offersCount }} {{ __("Offers") }} : {{ appliedOffersCount }}
+            {{ __("Applied") }}
+          </v-btn>
         </v-col>
       </v-row>
     </v-card>
@@ -92,11 +217,19 @@
 </template>
 
 <script>
-
 import format from "../../format";
 import _ from "lodash";
+import ItemGroupMultiSelect from "./ItemGroupMultiSelect.vue";
+import TagFilters from "./TagFilters.vue";
+
 export default {
+  name: "ItemsSelector",
+  components: {
+    ItemGroupMultiSelect,
+    TagFilters,
+  },
   mixins: [format],
+
   data: () => ({
     pos_profile: "",
     flags: {},
@@ -116,17 +249,18 @@ export default {
     customer: null,
     new_line: false,
     qty: 1,
+    pos_tags_filters: [],
   }),
 
   watch: {
-    filtered_items(new_value, old_value) {
+    filtered_items(newVal, oldVal) {
       if (!this.pos_profile.pose_use_limit_search) {
-        if (new_value.length != old_value.length) {
-          this.update_items_details(new_value);
+        if (newVal.length !== oldVal.length) {
+          this.update_items_details(newVal);
         }
       }
     },
-    customer() {
+    customer_price_list() {
       this.get_items();
     },
     new_line() {
@@ -135,6 +269,13 @@ export default {
   },
 
   methods: {
+    // ... (بقية الـ methods كما هي مع استبدال الدالة التالية) ...
+
+    handleGroupSelect(groupName) {
+      this.item_group = groupName === this.item_group ? 'ALL' : groupName;
+      this.search_onchange();
+    },
+
     show_offers() {
       this.eventBus.emit("show_offers", "true");
     },
@@ -154,7 +295,7 @@ export default {
       if (search) {
         sr = search;
       }
-      if (vm.item_group != "ALL") {
+      if (vm.item_group !== "ALL") {
         gr = vm.item_group.toLowerCase();
       }
       if (
@@ -173,7 +314,6 @@ export default {
           price_list: vm.customer_price_list,
           item_group: gr,
           search_value: sr,
-          customer: vm.customer,
         },
         callback: function (r) {
           if (r.message) {
@@ -235,6 +375,7 @@ export default {
           align: "start",
           sortable: true,
           key: "item_name",
+          width: "40%",
         },
         {
           title: __("Code"),
@@ -243,17 +384,16 @@ export default {
           key: "item_code",
         },
         { title: __("Rate"), key: "rate", align: "start" },
-        { title: __("Available QTY"), key: "actual_qty", align: "start" },
+        { text: __("Ava. QTY"), value: "actual_qty", align: "start" },
         { title: __("UOM"), key: "stock_uom", align: "start" },
       ];
       if (!this.pos_profile.posa_display_item_code) {
         items_headers.splice(1, 1);
       }
-
       return items_headers;
     },
     click_item_row(event, { item }) {
-      this.add_item(item)
+      this.add_item(item);
     },
     add_item(item) {
       item = { ...item };
@@ -276,7 +416,7 @@ export default {
       const new_item = { ...this.filtered_items[0] };
       new_item.qty = flt(qty);
       new_item.item_barcode.forEach((element) => {
-        if (this.search == element.barcode) {
+        if (this.search === element.barcode) {
           new_item.uom = element.posa_uom;
           match = true;
         }
@@ -287,7 +427,7 @@ export default {
         this.pos_profile.posa_search_serial_no
       ) {
         new_item.serial_no_data.forEach((element) => {
-          if (this.search && element.serial_no == this.search) {
+          if (this.search && element.serial_no === this.search) {
             new_item.to_set_serial_no = this.first_search;
             match = true;
           }
@@ -302,7 +442,7 @@ export default {
         this.pos_profile.posa_search_batch_no
       ) {
         new_item.batch_no_data.forEach((element) => {
-          if (this.search && element.batch_no == this.search) {
+          if (this.search && element.batch_no === this.search) {
             new_item.to_set_batch_no = this.first_search;
             new_item.batch_no = this.first_search;
             match = true;
@@ -324,16 +464,18 @@ export default {
       }
     },
     search_onchange() {
-      const vm = this;
-      if (vm.pos_profile.pose_use_limit_search) {
-        vm.get_items();
+      if (this.pos_profile.pose_use_limit_search) {
+        this.get_items();
       } else {
-        vm.enter_event();
+        this.enter_event();
       }
     },
     get_item_qty(first_search) {
       let scal_qty = Math.abs(this.qty);
-      if (first_search.startsWith(this.pos_profile.posa_scale_barcode_start)) {
+      if (
+        first_search &&
+        first_search.startsWith(this.pos_profile.posa_scale_barcode_start)
+      ) {
         let pesokg1 = first_search.substr(7, 5);
         let pesokg;
         if (pesokg1.startsWith("0000")) {
@@ -372,7 +514,6 @@ export default {
       this.$refs.debounce_search.focus();
     },
     update_items_details(items) {
-      // set debugger
       const vm = this;
       frappe.call({
         method: "posawesome.posawesome.api.posapp.get_items_details",
@@ -384,7 +525,7 @@ export default {
           if (r.message) {
             items.forEach((item) => {
               const updated_item = r.message.find(
-                (element) => element.item_code == item.item_code
+                (element) => element.item_code === item.item_code
               );
               item.actual_qty = updated_item.actual_qty;
               item.serial_no_data = updated_item.serial_no_data;
@@ -414,7 +555,7 @@ export default {
       });
     },
     trigger_onscan(sCode) {
-      if (this.filtered_items.length == 0) {
+      if (this.filtered_items.length === 0) {
         this.eventBus.emit("show_message", {
           title: `No Item has this barcode "${sCode}"`,
           color: "error",
@@ -426,138 +567,141 @@ export default {
         this.search = null;
       }
     },
-    generateWordCombinations(inputString) {
-      const words = inputString.split(" ");
-      const wordCount = words.length;
-      const combinations = [];
-
-      // Helper function to generate all permutations
-      function permute(arr, m = []) {
-        if (arr.length === 0) {
-          combinations.push(m.join(" "));
-        } else {
-          for (let i = 0; i < arr.length; i++) {
-            const current = arr.slice();
-            const next = current.splice(i, 1);
-            permute(current.slice(), m.concat(next));
-          }
-        }
-      }
-
-      permute(words);
-
-      return combinations;
-    },
   },
 
   computed: {
     filtered_items() {
-      this.search = this.get_search(this.first_search);
-      if (!this.pos_profile.pose_use_limit_search) {
-        let filtred_list = [];
-        let filtred_group_list = [];
-        if (this.item_group != "ALL") {
-          filtred_group_list = this.items.filter((item) =>
-            item.item_group
-              .toLowerCase()
-              .includes(this.item_group.toLowerCase())
-          );
-        } else {
-          filtred_group_list = this.items;
-        }
-        if (!this.search || this.search.length < 3) {
-          if (
-            this.pos_profile.posa_show_template_items &&
-            this.pos_profile.posa_hide_variants_items
-          ) {
-            return (filtred_list = filtred_group_list
-              .filter((item) => !item.variant_of)
-              .slice(0, 50));
-          } else {
-            filtred_list = filtred_group_list.slice(0, 50);
-            return filtred_list;
-          }
-        } else if (this.search) {
-          filtred_list = filtred_group_list.filter((item) => {
-            let found = false;
-            for (let element of item.item_barcode) {
-              if (element.barcode == this.search) {
-                found = true;
-                break;
-              }
-            }
-            return found;
-          });
-          if (filtred_list.length == 0) {
-            filtred_list = filtred_group_list.filter((item) =>
-              item.item_code.toLowerCase().includes(this.search.toLowerCase())
+      // تعديل جزء الفلترة
+      let filtred_group_list = [];
+
+      if (this.item_group !== 'ALL') {
+        filtred_group_list = this.items.filter(item => 
+          item.item_group.toLowerCase() === this.item_group.toLowerCase()
+        );
+      } else {
+        filtred_group_list = this.items;
+      }
+
+      // فلترة إضافية بناءً على التاجات (إن وجدت)
+      if (this.pos_tags_filters && this.pos_tags_filters.length > 0) {
+        filtred_group_list = filtred_group_list.filter((fItem) => {
+          return fItem.pos_tags.some((itemPosTag) => {
+            return this.pos_tags_filters.some(
+              (filterPosTag) => filterPosTag.tag_name === itemPosTag.tag_name
             );
-            if (filtred_list.length == 0) {
-              const search_combinations = this.generateWordCombinations(
-                this.search
-              );
-              filtred_list = filtred_group_list.filter((item) => {
-                let found = false;
-                for (let element of search_combinations) {
-                  element = element.toLowerCase().trim();
-                  let element_regex = new RegExp(
-                    `.*${element.split("").join(".*")}.*`
-                  );
-                  if (element_regex.test(item.item_name.toLowerCase())) {
-                    found = true;
-                    break;
-                  }
-                }
-                return found;
-              });
-            }
-            if (
-              filtred_list.length == 0 &&
-              this.pos_profile.posa_search_serial_no
-            ) {
-              filtred_list = filtred_group_list.filter((item) => {
-                let found = false;
-                for (let element of item.serial_no_data) {
-                  if (element.serial_no == this.search) {
-                    found = true;
-                    this.flags.serial_no = null;
-                    this.flags.serial_no = this.search;
-                    break;
-                  }
-                }
-                return found;
-              });
-            }
-            if (
-              filtred_list.length == 0 &&
-              this.pos_profile.posa_search_batch_no
-            ) {
-              filtred_list = filtred_group_list.filter((item) => {
-                let found = false;
-                for (let element of item.batch_no_data) {
-                  if (element.batch_no == this.search) {
-                    found = true;
-                    this.flags.batch_no = null;
-                    this.flags.batch_no = this.search;
-                    break;
-                  }
-                }
-                return found;
-              });
-            }
-          }
-        }
+          });
+        });
+      }
+
+      // إذا لم يكن هناك بحث كافي (أقل من 3 أحرف)
+      if (!this.search || this.search.length < 3) {
         if (
           this.pos_profile.posa_show_template_items &&
           this.pos_profile.posa_hide_variants_items
         ) {
-          return filtred_list.filter((item) => !item.variant_of).slice(0, 50);
+          return filtred_group_list
+            .filter((item) => !item.variant_of)
+            .slice(0, this.pos_profile.custom_posa_items_per_page);
         } else {
-          return filtred_list.slice(0, 50);
+          return filtred_group_list.slice(
+            0,
+            this.pos_profile.custom_posa_items_per_page
+          );
         }
       } else {
+        // عند وجود قيمة بحث، نقوم أولاً بالبحث في الباركود
+        filtred_list = filtred_group_list.filter((item) => {
+          let found = false;
+          for (let element of item.item_barcode) {
+            if (element.barcode === this.search) {
+              found = true;
+              break;
+            }
+          }
+          return found;
+        });
+        // إذا لم نجد نتيجة بالباركود، نبحث في item_code ثم في item_name
+        if (filtred_list.length === 0) {
+          filtred_list = filtred_group_list.filter((item) =>
+            item.item_code.toLowerCase().includes(this.search.toLowerCase())
+          );
+          if (filtred_list.length === 0) {
+            filtred_list = filtred_group_list.filter((item) =>
+              item.item_name.toLowerCase().includes(this.search.toLowerCase())
+            );
+          }
+          // البحث في serial_no (إذا كان متاحاً)
+          if (
+            filtred_list.length === 0 &&
+            this.pos_profile.posa_search_serial_no
+          ) {
+            filtred_list = filtred_group_list.filter((item) => {
+              let found = false;
+              for (let element of item.serial_no_data) {
+                if (element.serial_no === this.search) {
+                  found = true;
+                  this.flags.serial_no = this.search;
+                  break;
+                }
+              }
+              return found;
+            });
+          }
+          // البحث في batch_no (إذا كان متاحاً)
+          if (
+            filtred_list.length === 0 &&
+            this.pos_profile.posa_search_batch_no
+          ) {
+            filtred_list = filtred_group_list.filter((item) => {
+              let found = false;
+              for (let element of item.batch_no_data) {
+                if (element.batch_no === this.search) {
+                  found = true;
+                  this.flags.batch_no = this.search;
+                  break;
+                }
+              }
+              return found;
+            });
+          }
+        }
+      }
 
-        return this.items.slice(0, 50);
+      let filtered_list;
+      if (
+        this.pos_profile.posa_show_template_items &&
+        this.pos_profile.posa_hide_variants_items
+      ) {
+        filtered_list = filtred_list
+          .filter((item) => !item.variant_of)
+          .slice(0, this.pos_profile.custom_posa_items_per_page);
+      } else {
+        filtered_list = filtred_list.slice(
+          0,
+          this.pos_profile.custom_posa_items_per_page
+        );
+      }
+
+      // في حالة عدم وجود نتائج، نجرب "فزي سيرش" مبسطة
+      if (filtred_list.length === 0 && this.search) {
+        filtred_list = filtred_group_list.filter((items) => {
+          return levenshteinDistance(
+            items.item_name.toLowerCase(),
+            this.search.toLowerCase()
+          );
+        });
+      }
+
+      return filtred_list;
+
+      function levenshteinDistance(itemName, searchQuery) {
+        let searchWords = searchQuery.split(" ");
+        for (let i = 0; i < searchWords.length; i++) {
+          if (!itemName.includes(searchWords[i])) {
+            return false;
+          }
+        }
+        return true;
       }
     },
     debounce_search: {
@@ -570,8 +714,8 @@ export default {
     },
   },
 
-  created: function () {
-    this.$nextTick(function () { });
+  created() {
+    this.$nextTick(() => {});
     this.eventBus.on("register_pos_profile", (data) => {
       this.pos_profile = data.pos_profile;
       this.get_items();
@@ -594,8 +738,11 @@ export default {
     this.eventBus.on("update_customer_price_list", (data) => {
       this.customer_price_list = data;
     });
-    this.eventBus.on("update_customer", (data) => {
-      this.customer = data;
+    this.eventBus.on("set_pos_tags_filters", (pos_tags) => {
+      this.pos_tags_filters = pos_tags;
+    });
+    this.eventBus.on("clear_pos_tags_filters", () => {
+      this.pos_tags_filters.length = 0;
     });
   },
 
@@ -605,4 +752,6 @@ export default {
 };
 </script>
 
-<style scoped></style>
+<style scoped>
+/* ... (بقية الأنماط كما هي) ... */
+</style>

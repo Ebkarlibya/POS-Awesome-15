@@ -16,7 +16,6 @@ from posawesome.posawesome.doctype.delivery_charges.delivery_charges import (
 
 
 def validate(doc, method):
-    validate_shift(doc)
     set_patient(doc)
     auto_set_delivery_charges(doc)
     calc_delivery_charges(doc)
@@ -244,24 +243,80 @@ def calc_delivery_charges(doc):
     if calculate_taxes_and_totals:
         doc.calculate_taxes_and_totals()
 
+@frappe.whitelist()
+def get_invoices_list():
+    import json
 
-def validate_shift(doc):
-    if doc.posa_pos_opening_shift and doc.pos_profile and doc.is_pos:
-        # check if shift is open
-        shift = frappe.get_cached_doc("POS Opening Shift", doc.posa_pos_opening_shift)
-        if shift.status != "Open":
-            frappe.throw(_("POS Shift {0} is not open").format(shift.name))
-        # check if shift is for the same profile
-        if shift.pos_profile != doc.pos_profile:
-            frappe.throw(
-                _("POS Opening Shift {0} is not for the same POS Profile").format(
-                    shift.name
-                )
+    try:
+        term_sql_cond = ""
+        include_drafts = json.loads(frappe.form_dict["include_drafts"])
+
+        docstatuses = ""
+
+        if include_drafts:
+            docstatuses = "(0,1)"
+        else:
+            docstatuses = "(1)"
+
+        if "term" in frappe.form_dict and len(frappe.form_dict["term"]) > 0:
+            escaped_input = frappe.db.escape(f"%{frappe.form_dict['term']}%")
+            term_sql_cond = f"""
+                and name like {escaped_input}
+                or grand_total like {escaped_input}
+            """
+            # or posa_pos_restaurant_table like {escaped_input}
+            # cond_filters["name"] = ["like", f"%{frappe.form_dict['term']}%"]
+            # cond_filters["posa_pos_restaurant_table"] = ["like", f"%{frappe.form_dict['term']}%"]
+
+        invoices = frappe.db.sql(
+            f"""
+                select name, customer, posting_date,due_date, grand_total,
+                status, outstanding_amount
+                from `tabSales Invoice`
+                    
+                where docstatus in {docstatuses}
+                and is_return = 0
+                {term_sql_cond}
+                order by creation desc
+                limit 20
+            """,
+            as_dict=True,
+        )
+        for invoice in invoices:
+            si_items = frappe.get_all(
+                "Sales Invoice Item",
+                fields=["posa_has_warranty"],
+                filters={"parent": invoice["name"]},
             )
-        # check if shift is for the same company
-        if shift.company != doc.company:
-            frappe.throw(
-                _("POS Opening Shift {0} is not for the same company").format(
-                    shift.name
-                )
-            )
+            for si_item in si_items:
+                if si_item["posa_has_warranty"]:
+                    invoice["posa_has_warranty"] = "Yes"
+                else:
+                    invoice["posa_has_warranty"] = "No"
+        return invoices
+    except:
+        tb = frappe.get_traceback()
+        print(frappe.get_traceback())
+
+
+@frappe.whitelist()
+def get_invoice_items():
+    import json
+
+    try:
+        invoice = json.loads(frappe.form_dict["invoice"])
+        items = frappe.db.sql(
+            f"""
+                SELECT item_code, qty, rate, amount
+                FROM `tabSales Invoice Item`
+                    
+                WHERE parent = {frappe.db.escape(f"{invoice['name']}")}
+                order by creation desc
+                limit 20
+            """,
+            as_dict=True,
+        )
+        return items
+    except:
+        tb = frappe.get_traceback()
+        print(frappe.get_traceback())

@@ -1,0 +1,165 @@
+<template>
+  <div class="extra-filters-main">
+    <div class="extra-filters-outside-controls" align="right">
+      <v-btn color="primary" @click="openPosTags">
+        <v-badge
+          color="error"
+          dot
+          style="position: absolute; top: 2px; left: 3px"
+          v-if="isTagsFilterActive"
+        >
+          <template v-slot:badge>
+            <v-icon>mdi-filter-variant</v-icon>
+          </template>
+        </v-badge>
+        <v-icon>mdi-filter-variant</v-icon>
+      </v-btn>
+
+      <v-btn
+        class="mx-3"
+        color="error"
+        @click="clearPosTags"
+        v-if="isTagsFilterActive"
+      >
+        <v-icon>mdi-close-thick</v-icon>
+      </v-btn>
+    </div>
+
+    <v-dialog v-model="posTagsDialog" width="600">
+      <v-card elevation="2" outlined shaped>
+        <v-card-title>{{ __("POS Tags") }}</v-card-title>
+
+        <v-card-text>
+          <v-row dense class="mx-5 mb-6">
+            <v-text-field
+              clearable
+              v-model="search"
+              append-icon="mdi-magnify"
+              :label="__('Search POS Tags')"
+              single-line
+              hide-details
+            ></v-text-field>
+          </v-row>
+          <v-divider></v-divider>
+          <v-row dense class="mx-5">
+            <v-col
+              v-for="(posTag, index) in pos_tags"
+              :key="index"
+              cols="auto"
+            >
+              <v-btn
+                medium
+                :color="posTag.selected ? 'warning' : 'primary'"
+                class="white--text"
+                @click="selectPosTag(posTag)"
+              >
+                <strong>{{ posTag.tag_name }}</strong>
+              </v-btn>
+            </v-col>
+          </v-row>
+        </v-card-text>
+
+        <v-card-actions>
+          <v-btn color="error" @click="clearPosTags">{{ __("Clear") }}</v-btn>
+          <v-spacer></v-spacer>
+          <v-btn color="info" @click="closePosTags">{{ __("Ok") }}</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
+</template>
+
+<script>
+export default {
+  data: () => ({
+    posTagsDialog: false,
+    pos_profile: null,
+    search: "",
+    _pos_tags: [],
+    pos_tags: [],
+  }),
+  methods: {
+    openPosTags() {
+      this.posTagsDialog = true;
+    },
+    closePosTags() {
+      this.posTagsDialog = false;
+    },
+    selectPosTag(posTag) {
+      posTag.selected = !posTag.selected;
+      this.applyPosTags();
+    },
+    applyPosTags() {
+      this.eventBus.emit("set_pos_tags_filters", this.selectedTags);
+    },
+    clearPosTags() {
+      this.pos_tags.forEach((posTag) => (posTag.selected = false));
+      this.applyPosTags();
+    },
+  },
+  computed: {
+    selectedTags() {
+      return this.pos_tags.filter((tag) => tag.selected);
+    },
+    isTagsFilterActive() {
+      return this.selectedTags.length > 0;
+    },
+  },
+  created() {
+    this.$nextTick(() => {
+      this.eventBus.on("register_pos_profile", (pos_profile) => {
+        this.pos_profile = pos_profile;
+      });
+    });
+    // fetch pos tags
+    frappe.call({
+      method: "posawesome.posawesome.api.pos_tags.get_pos_tags",
+      type: "GET",
+      callback: (r) => {
+        if (r.message) {
+          this._pos_tags = r.message.map((tag) => ({
+            ...tag,
+            selected: false,
+          }));
+          this.pos_tags = this._pos_tags;
+        }
+      },
+    });
+  },
+  watch: {
+    search(value) {
+      if (value) {
+        this.pos_tags = this._pos_tags.filter((tag) =>
+          tag.tag_name.toLowerCase().includes(value.toLowerCase())
+        );
+      } else {
+        this.pos_tags = [...this._pos_tags];
+      }
+    },
+  },
+};
+</script>
+
+<style scoped>
+.extra-filters-main {
+  padding: 16px;
+}
+
+/* .extra-filters-outside-controls {
+  display: flex;
+  align-items: center;
+} */
+
+.v-btn {
+  transition: background-color 0.3s, color 0.3s;
+}
+
+.v-btn:hover {
+  background-color: #0056b3;
+  color: #ffffff;
+}
+
+.v-dialog {
+  transition: opacity 0.3s;
+}
+</style>
